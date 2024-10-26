@@ -470,6 +470,7 @@ contract AuctionC {
         require(msg.sender==hba, "Only Highest Bider can withdraw");
         return hb;
     }
+}
 
 ##############################################################################
 PRAC 7:

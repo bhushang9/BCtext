@@ -1,0 +1,80 @@
+pip install pyspark
+
+
+import pyspark
+import pandas as pd
+pd.read_csv('/content/test1.csv')
+
+
+from pyspark.sql import SparkSession
+
+
+spark = SparkSession.builder.appName('Practice').getOrCreate()
+
+
+#Read dataset and store in Variable
+df_pyspark = spark.read.csv('/content/test1.csv', header=True, inferSchema=True)
+df_pyspark.show()
+
+
+#type of data
+type(df_pyspark)
+
+#schema
+df_pyspark.printSchema()
+
+#First 3 data value
+df_pyspark.head(3)
+
+#to get names of column
+df_pyspark.columns
+
+#selecting specific columns
+df_pyspark.select('Name').show()
+df_pyspark.select(['Name', 'Experience']).show()
+
+
+#to check datatypes
+df_pyspark.dtypes
+
+#to describe the dataset
+df_pyspark.describe().show()
+
+#adding the columns in data frame
+df_pyspark = df_pyspark.withColumn('Experience After 2 year', df_pyspark['Experience']+2)
+df_pyspark.show()
+
+#drop columns
+df_pyspark=df_pyspark.drop('Experience After 2 year')
+df_pyspark.show()
+
+
+#renaming columns
+df_pyspark.withColumnRenamed('Name', 'New Name').show()
+
+df_pyspark.na.drop().show()
+
+df_pyspark.na.drop(how='all').show()
+
+df_pyspark.na.drop(how='any').show()
+
+#threshold
+df_pyspark.na.drop(how='any', thresh=2).show()
+
+df_pyspark=df_pyspark.na.drop(how='any', subset=['Experience'])
+df_pyspark.show()
+
+
+#filling the missing vsalues
+df_pyspark.na.fill('Missing Values').show()
+
+
+#writing the ffunction to calculate the value at the place of null
+from pyspark.ml.feature import Imputer
+imputer = Imputer(
+    inputCols=['Age','Salary'], 
+    outputCols=["{}_imputed".format(c) for c in ['Age', 'Salary']]).setStrategy("mean")
+
+
+
+imputer.fit(df_pyspark).transform(df_pyspark).show()

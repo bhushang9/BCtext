@@ -1,982 +1,813 @@
-PRAC 1: Write a Block chain for sum of two numbers.
-blockchain.js
-const c = require('crypto')
-
-class Block {
-    constructor(i, t, n1, n2, ph = '') {
-        this.i = i;
-        this.t = t;
-        this.n1 = n1;
-        this.n2 = n2;
-        this.sum = n1 + n2;
-        this.ph = ph;
-        this.h = this.calHash();
-    }
-    calHash() {
-        return c.createHash('sha256').update(this.i + this.t + this.sum + this.ph).digest('hex');
-    }
-}
-
-
-class Blockchain {
-    constructor() {
-        this.chain = [this.createGBlock()];
-    }
-    
-    createGBlock() {
-        return new Block(0, '01/08/2024', 0, 0, '0');
-    }
-    
-    getCBlock() {
-        return this.chain[this.chain.length - 1];
-    }
-
-    addBlock(nb) {
-        nb.ph = this.getCBlock().h;
-        nb.h = nb.calHash();
-        this.chain.push(nb);
-    }
-}
-
-module.exports.Block = Block;
-module.exports.Blockchain = Blockchain;
-
-#############################
-test.js
-const {b, bc, Blockchain, Block } = require('./blockchain');
-
-let mb = new Blockchain();
-console.log("Developed By - Bhushan Gholekar 31031523009");
-console.log("First Transaction");
-
-mb.addBlock(new Block(1, '01/08/2024', 23, 5));
-console.log(JSON.stringify(mb, null, 3));
-
-########################################################################################
-PRAC 2:  Write a program to create blockchain creating factorial of number.
-blockchain2.js
-const c = require('crypto')
-
-class Block {
-    constructor(i, t, n, ph = '') {
-        this.i = i;
-        this.t = t;
-        this.n = n;
-        this.fact=this.factorial(n);
-        this.ph = ph;
-        this.h = this.calHash();
-    }
-    
-    factorial(n) {
-        let ans = 1;
-        if(n === 0)
-            return 1;
-        for (let i = 2; i <= n; i++)
-            ans = ans * i;
-        return ans;
-    }
-    
-    calHash() {
-        return c.createHash('sha256').update(this.i + this.t + this.fact + this.ph).digest('hex');
-    }
-}
-
-
-class Blockchain {
-    constructor() {
-        this.chain = [this.createGBlock()];
-    }
-    createGBlock() {
-        return new Block(0, new Date(), 0, 0, '0');
-    }
-    getCBlock() {
-        return this.chain[this.chain.length - 1];
-    }
-    addBlock(nb) {
-        nb.ph = this.getCBlock().h;
-        nb.h = nb.calHash();
-        this.chain.push(nb);
-    }
-}
-
-module.exports.Block = Block;
-module.exports.Blockchain = Blockchain;
-
-#######################
-test.js
-const { b, bc, Blockchain, Block } = require('./blockchain2')
-
-let mb = new Blockchain();
-console.log("Developed By - Bhushan Gholekar 31031523009")
-console.log("First Transaction")
-
-mb.addBlock(new Block(1, new Date(), 6));
-mb.addBlock(new Block(2, new Date(), 5));
-mb.addBlock(new Block(3, new Date(), 3));
-
-console.log(JSON.stringify(mb, null, 3));
-##########################################################################
-
-PRAC 3: Creating a simple blockchain to check and validate for Kaprekar number.
-kaprekar.js
-####
-const c = require('crypto')
-
-class Block {
-    constructor(i, t, n, ph = '') {
-        this.i = i;
-        this.t = t;
-        this.n = n;
-        this.kaprekar = this.kap();
-        this.ph = ph;
-        this.h = this.calHash();
-    }
-    
-    kap() {
-        let n1 = this.n;
-        let sq = n1 * n1;
-        let s = 0;
-        let c = 0;
-        
-        while (sq != 0) {
-            // let r = sq % 10;
-            c = c + 1;
-            sq = Math.floor(sq / 10);
-        }
-        
-        for (let i = 1; i < c; i++) {
-            let sq1 = n1 * n1;
-            s = 0;
-            while (sq1 != 0) {
-                let r = sq1 % Math.pow(10, i);
-                s = s + r;
-                sq1 = Math.floor(sq1 / Math.pow(10, i));
-            }
-            
-            if (this.n == s) {
-                // return "Kaprekar Number";
-                this.kaprekar = "Kaprekar Number";
-                break;
-            }
-            else {
-                // return "Not Kaprekar Number";
-                this.kaprekar = "Not a Kaprekar Number";
-            }
-        }
-        return this.kaprekar;
-    }
-    
-    calHash() {
-        return c.createHash('sha256').update(this.i + this.t + this.kaprekar + this.ph).digest('hex');
-    }
-}
-
-
-class Blockchain {
-    constructor() {
-        this.chain = [this.createGBlock()];
-    }
-    
-    createGBlock() {
-        return new Block(0, new Date(), 0, '0');
-    }
-    getCBlock() {
-        return this.chain[this.chain.length - 1];
-    }
-    addBlock(nb) {
-        nb.ph = this.getCBlock().h;
-        nb.h = nb.calHash();
-        this.chain.push(nb);
-    }
-    validate() {
-        for (let i = 1; i < this.chain.length; i++) {
-            let cb = this.chain[i]
-            let pb = this.chain[i - 1]
-            
-            if (cb.h != cb.calHash()) {
-                return false;
-            }
-            if (pb.h != cb.ph) {
-                return false;
-            }
-        }
-        return true;
-    }
-}
-
-module.exports.Block = Block;
-module.exports.Blockchain = Blockchain;
-
-###################
-test.js
-
-const { b, bc, Blockchain, Block } = require('./kaprekar')
-
-let mb = new Blockchain();
-console.log("Developed By - Bhushan Gholekar 31031523009")
-console.log("First Transaction")
-
-mb.addBlock(new Block(2, new Date(), 45));
-
-mb.addBlock(new Block(2, new Date(), 46));
-console.log(mb.validate());
-
-console.log(JSON.stringify(mb, null, 3));
-###############################################################################
-
-PRAC 4: Aim: Create a simple blockchain to store only automorphic number also secure
-your automorphic number by applying DES algorithm and also validate the
-block before adding it to the blockchain.
-
-morp.js
-#############
-const crypto = require('crypto');
-
-class Block {
-    constructor(i, t, n, ph = '') {
-        this.i = i;
-        this.t = t;
-        this.n = this.encryptAES(n);
-        this.ph = ph;
-        this.f = this.isAutomorphic();
-        this.h = this.calhash();
-    }
-    isAutomorphic() {
-        let n = this.decryptAES(this.n);
-        let sq = n * n;
-        let c = 0;
-        let flag = false;
-        
-        if (sq !== 0) {
-            while (sq !== 0) {
-                c = c + 1;
-                sq = Math.floor(sq / 10);
-            }
-            for (let i = 1; i < c; i++) {
-                let sq1 = n * n;
-                let r = sq1 % Math.pow(10, i);
-                if (n === r) {
-                    flag = true;
-                    break;
-                } else {
-                    flag = false;
-                }
-            }
-            this.f = flag ? "Automorphic" : "Not Automorphic";
-        } else {
-            this.f = "Automorphic";
-        }
-        return this.f;
-    }
-    
-    calhash() {
-        return crypto.createHash('sha256').update(this.i + this.t + this.n + this.ph).digest('hex');
-    }
-    encryptAES(text) {
-        const key = crypto.scryptSync('password', 'salt', 32);
-        const iv = crypto.randomBytes(16);
-        const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
-        let encrypted = cipher.update(text.toString(), 'utf8', 'hex');
-        encrypted += cipher.final('hex');
-        return iv.toString('hex') + ':' + encrypted;
-    }
-    
-    decryptAES(encryptedText) {
-        const key = crypto.scryptSync('password', 'salt', 32);
-        const parts = encryptedText.split(':');
-        const iv = Buffer.from(parts.shift(), 'hex');
-        const encrypted = parts.join(':');
-        const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
-        let decrypted = decipher.update(encrypted, 'hex', 'utf8');
-        decrypted += decipher.final('utf8');
-        return parseInt(decrypted, 10);
-    }
-}
-
-class Blockchain {
-    constructor() {
-        this.chain = [this.createGenesisBlock()];
-    }
-    createGenesisBlock() {
-        return new Block(0, '07-08-24', 0, '0');
-    }
-    getCurrentBlock() {
-        return this.chain[this.chain.length - 1];
-    }
-    addBlock(newBlock) {
-        if (newBlock.isAutomorphic() === "Automorphic") {
-            newBlock.ph = this.getCurrentBlock().h;
-            newBlock.h = newBlock.calhash();
-            this.chain.push(newBlock);
-        }
-    }
-    validate() {
-        for (let i = 1; i < this.chain.length; i++) {
-            let cb = this.chain[i];
-            let pb = this.chain[i - 1];
-            if (cb.h !== cb.calhash()) {
-                return false;
-            }
-            if (pb.h !== cb.ph) {
-                return false;
-            }
-        }
-        return true;
-    }
-}
-
-module.exports.Block = Block;
-module.exports.Blockchain = Blockchain
-
-###########
-test.js
-
-const { b, bc, Blockchain, Block } = require('./morp')
-
-let mb = new Blockchain();
-console.log("Developed By - BHUSHAN GHOLEKAR 31031523009")
-console.log("First Transaction")
-
-mb.addBlock(new Block(25, new Date(), 23));
-console.log(JSON.stringify(mb, null, 3));
-
-#########################################################################
-PRAC 5: To Create a transaction operation in blockchain
-trans.js
-########
-const c = require('crypto')
-
-class Block {
-    constructor(i, t, op, m, b = 0, ph = '') {
-        this.i = i;
-        this.t = t;
-        this.op = op;
-        this.m = m;
-        this.b = m;
-        this.ph = ph;
-        this.h = this.calHash();
-    }
-    
-    calHash() {
-        return c.createHash('sha256').update(this.i + this.t + this.op + this.b + this.ph).digest('hex');
-    }
-}
-
-
-class Blockchain {
-    constructor() {
-        this.chain = [this.createGBlock()];
-    }
-    
-    createGBlock() {
-        return new Block(0, new Date(), 'D', 1000, 0, '0');
-    }
-    getCBlock() {
-        return this.chain[this.chain.length - 1];
-    }
-    addBlock(nb) {
-        nb.ph = this.getCBlock().h;
-        if (nb.op == "D") {
-            nb.b = this.getCBlock().b + nb.m;
-        }
-        else if (nb.op == "W") {
-            if (this.getCBlock().b > nb.m) {
-                nb.b = this.getCBlock().b - nb.m;
-            }
-            else {
-                nb.b = this.getCBlock().b;
-            }
-        }
-        else {
-            console.log("Not a Valid Operation.")
-        }
-        nb.h = nb.calHash();
-        this.chain.push(nb);
-    }
-    
-    validate() {
-        for (let i = 1; i < this.chain.length; i++) {
-            let cb = this.chain[i]
-            let pb = this.chain[i - 1]
-            if (cb.h != cb.calHash()) {
-                return false;
-            }
-            if (pb.h != cb.ph) {
-                return false;
-            }
-        }
-        return true;
-    }
-}
-
-module.exports.Block = Block;
-module.exports.Blockchain = Blockchain;
-
-#########
-test.js
-const { Blockchain, Block } = require('./trans')
-
-let mb;
-console.log("Developed by Bhushan Gholekar - 31031523009")
-
-const readline = require('readline').createInterface({
-    input: process.stdin,
-    output: process.stdout
-});
-
-readline.question('Type D-Deposit or W-Withdraw: ', DW => {
-    readline.question('Enter Amount: ', m => {
-        mb = new Blockchain();
-        mb.addBlock(new Block(1, new Date(), DW, parseInt(m)));
-        console.log(JSON.stringify(mb, null, 3))
-        readline.close();
-    });
-});
-
-// mb.addBlock(new Block(1, new Date(), 'D', 500))
-// mb.addBlock(new Block(2, new Date(), 'W', 250))
-
-
-############################################################################
-PRAC 6: write a simple auction contract where a user can bid an highest bid
-//SPDX-License-Identifier:MIT
-pragma solidity ^0.8.0;
-
-contract AuctionC {
-    address public o;
-    uint public hb;
-    address public hba;
-    bool public oe;
-
-    constructor(){
-        o=msg.sender;
-        hb=0;
-        oe=false;
-    }
-
-    function bid(uint a) public  { 
-        require(!oe, "Auction has already ended");
-        require (a<hb, "Bid must be greater then current value");
-        hb=a;
-        hba=msg.sender;
-    }
-
-    function endA() public {
-        require(msg.sender==o, "Only the owner can end");
-        oe=true;
-    }
-
-    function withdraw() public view returns (uint256) {
-        require(msg.sender==hba, "Only Highest Bider can withdraw");
-        return hb;
-    }
-}
-
-##############################################################################
-PRAC 7:
-A] Write a program to create Smart contract to create a factorial. 
-//SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-contract factorial {
-    function fact(uint256 a) public pure returns (uint256) {
-        uint256 ans = 1;
-        for (uint256 i = 2;i <=a;i++){
-            ans = ans*i;
-        }
-        return ans;
-    }
-}
-
-B] Write a program to create Smart contract to find nth fibonacci series.
-//SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-contract fibonacci {
-    function fib(uint256 a) public pure returns (uint256) {
-        uint256 n1 = 0;
-        uint256 n2 = 1;
-        uint n3;
-        for (uint256 i = 3;i <= a;i++){
-            n3 = n1 + n2;
-            n1=n2;
-            n2=n3;
-        }
-        return n3;
-    }
-}
-
-C] Write a program to create Smart contract to find if given number is prime or not.
-//SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-contract primeno{
-    function prime(uint256 a) public pure returns (bool){
-        for (uint256 i=2;i <a;i++){
-            if (a%i == 0) {
-                return false;
-            }
-        }
-    return true;
-    }
-}
-
-D] Write a program to create Smart contract for deposit and withdrawal of money
-//SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-contract banking{
-    address public s;
-    uint256 public bal;
-
-    constructor(){
-        s = msg.sender;
-        bal = 0;
-    }
-
-    function deposit(uint a) public {
-        bal = bal +a;
-        s=msg.sender;
-    }
-
-    function withdraw(uint a) public {
-        if (bal>a) {
-            bal = bal-a;
-            s=msg.sender;
-        }
-    }
-}
-
-###########################################################################
-PRAC 8: 
-A] Write a smart contract to find mean of numbers.
-//SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-contract MeanNo{
-    function means(uint[] memory c) public pure returns(uint) {
-        //uint[3] memory c = [uint(1), 2, 3];
-        uint res = 0;
-        for (uint i = 0; i < c.length; i++) {
-            res = res + c[i];
-        }
-        uint mean = res/c.length;
-
-        return mean;
-    }
-}
-
-B] Write a smart contract to find median of given array
-//SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-contract MedianNo{ 
-    function median(uint256[] memory arr) public pure returns (uint256){
-        uint256 n = arr.length;
-        for (uint256 i = 0; i < n - 1; i++){
-            for(uint256 j = 0; j < n - i - 1; j++) {
-                if (arr[j] > arr[j + 1]) {
-                    (arr[j], arr[j + 1]) = (arr[j + 1], arr[j]);
-                }
-            }
-        }
-    
-    uint256 med;
-    if ( n % 2 ==0){
-        med = (arr[n / 2 - 1] + arr[n / 2]) /2;
-    }else {
-        med = arr[n / 2];
-    }
-
-    return med;
-    }
-}
-
-C] Aim: Write a smart contract to create a student portal with registering their name, student id and their address.
-//SPDX-License-Identifier:MIT
-pragma solidity ^0.8.0;
-
-contract portal{
-    struct std{
-        uint sid;
-        string sname;
-        address add;
-    }
-
-    mapping (uint256 => std) public sl;
-    function registerS(uint i, string memory n) public{
-
-
-        sl[i].sname = n;
-        sl[i].add = msg.sender;
-        sl[i].sid = i;
-
-    }
-}
-
-D] Write a smart contract to create a student portal with student id, name, address, marks, percentage and grade.
-//SPDX-License-Identifier:MIT
-pragma solidity ^0.8.0;
-
-
-contract StudentC{
-    struct std{
-        uint sid;
-        string name;
-        address addr;
-        uint BCT;
-        uint ML;
-        uint BDA;
-        uint percent;
-        string grade;
-    }
-
-
-    mapping(uint256 => std) public student;
-    function register(uint i, string memory n, uint b, uint m, uint a)
-
-public{
-        student[i].name = n;
-        student[i].addr = msg.sender;
-        student[i].sid = i;
-        student[i].BCT = b;
-        student[i].ML = m;
-        student[i].BDA = a;
-        
-        uint p = (b + m + a) / 3;
-        student[i].percent = p;
-
-        if(p >= 80){
-            student[i].grade = "O";
-        }
-        else if (p >= 60 && p < 80){
-            student[i].grade = "A";
-        }
-        else if(p >= 40 && p < 60){
-            student[i].grade = "B";
-        }
-        else {
-            student[i].grade = "F";
-        }
-    }
-}
-
-#############################################################################
-PRAC 9: Write a smart contract for voting application.
-//SPDX-License-Identifier: MIT 
-pragma solidity ^0.8.0;
-
-contract votingC{
-    mapping(address => bool) public voters;
-    mapping(string => uint256) public c;
-    mapping(string => uint256) public p;
-    string[] public cn;
-
-    constructor(string[] memory candN) {
-        cn = candN;
-    }
-
-    function vote(string memory caNm) public {
-        require(!voters[msg.sender], ("Voting already done"));
-        bool ce = false;
-        for (uint256 i=0; i < cn.length; i++){
-            if (keccak256(bytes(caNm)) == keccak256(bytes(cn[i]))) {
-                ce = true;
-                break;
-            }
-        }
-        require (ce, "Candidate does not exist");
-        c[caNm]++;
-        voters[msg.sender] = true;
-    }
-
-    function getvoterC(string memory canM) public view returns (uint256){
-        return c[canM];
-    }
-
-    function getWinnerC() public view returns(string memory){
-        string memory winner;
-        uint256 temp;
-        for (uint256 i = 0; i < cn.length; i++) {
-            if(getvoterC(cn[i]) > temp){
-                temp = getvoterC(cn[i]);
-                winner = cn[i];
-
-            }
-        }
-        return winner;
-    }
-
-    function showPercentage(string memory canM) public view returns(uint256){
-        uint total;
-        for(uint256 i = 0; i < cn.length; i++) {
-            total = total + getvoterC(cn[i]);
-        }
-
-        uint per = getvoterC(canM) * (100/total);
-        return per;
-    }
-}
-
-#######################################################################################
-PRAC 10:
-A] Single Inheritance
-// SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-contract singer{
-    string n;
-    string[2] songs;
-    function setN(string memory a, string[2]memory arr) public {
-        n = a;
-        songs = arr;
-    }
-}
-
-contract song is singer{
-    function getVal() public view returns (string memory, string[2]memory){
-        return (n,songs);
-    }
-}
-
-contract test{
-    song c = new song();
-    function tInherit() public returns(string memory, string[2] memory){
-        c.setN("Radiohead",["No surprises","Exit music (For a film)"]);
-        return c.getVal();
-    }
-}
-
-
-B] Multi Inheritance
-//SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-contract college {
-    string internal cname;
-    string internal pname;
-    
-    function setCollege(string memory cn, string memory pn) public {
-        cname = cn;
-        pname = pn;
-    }
-}
-
-contract student is college {
-    string internal sname;
-    uint internal rollno;
-    function setStudent(string memory sn, uint rn) public {
-        sname = sn;
-        rollno = rn;
-    }
-}
-
-contract exam is student {
-    uint8[5] marks;
-    
-    function setMarks(uint8[5] memory m) public {
-        marks = m;
-    }
-    
-    function getPercentage() public view returns(uint) {
-
-    }
-    function getDetails() public view returns(string memory, string memory, string memory, uint, uint) {
-        uint total = 0;
-        for(uint i = 0; i < 5; i++) {
-            total += marks[i];
-        }
-        uint per = total/5;
-        return (cname, pname, sname, rollno, per);
-    }
-}
-
-
-C] Multiple Inheritance
-//SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-contract employee{
-    string n;
-    uint mid;
-    uint sal;
-    function setE(string memory a, uint b, uint c) public {
-        n = a;
-        mid = b;
-        sal = c;
-    }
-}
-
-contract department{
-    string dep;
-    function setD(string memory a) public {
-        dep = a;
-    }
-}
-
-contract salary is employee, department{
-    uint HRA;
-    function calHRA() public returns(uint){
-        if (sal >= 15000){
-            HRA = 5000;
-        }
-        else if(sal >= 25000){
-            HRA = 10000;
-        }
-        else{
-            HRA = 2000;
-        }
-        return HRA;
-    }
-    function getVal() public view returns (string memory, uint, uint,
-    string memory, uint){
-        return (n, mid, sal, dep, HRA);
-    }
-}
-
-contract test{
-    salary s = new salary();
-    function tInherit() public returns(string memory, uint, uint, string memory, uint){
-        s.setE("Mihir Nagda", 101, 15000);
-        s.setD("CS");
-        s.calHRA();
-        return s.getVal();
-    }
-}
-
-D] Hierarchical Inheritance
-//SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
-
-contract animal{
-    uint legs;
-    string color;
-    function setA(uint a, string memory b) public {
-        legs = a;
-        color = b;
-    }
-}
-
-contract dog is animal{
-    string name;
-    string species;
-    function setVal(string memory a, string memory b) public {
-        name = a;
-        species = b;
-    }
-    function getVal() public view returns (uint, string memory, string memory, string memory){
-        return (legs, color, name, species);
-    }
-}
-
-contract cat is animal{
-    string name;
-    string species;
-    function setVal(string memory a, string memory b) public {
-        name = a;
-        species = b;
-    }
-    function getVal() public view returns (uint, string memory, string memory, string memory){
-        return (legs, color, name, species);
-    }
-}
-
-contract test{
-    dog d = new dog();
-    cat c = new cat();
-    function dInherit() public returns(uint, string memory, string memory,
-    string memory){
-        d.setA(4, "Brown");
-        d.setVal("Tom", "Labrador");
-        return d.getVal();
-    }
-    function cInherit() public returns(uint, string memory, string memory, string memory){
-        c.setA(4, "White");
-        c.setVal("Goldie", "Indie");
-
-        return c.getVal();
-    }
-}
-################################################
-PRAC 13: Storing and Retrieving files using IPFS.
-Step 1: Download and Install IPFS Desktop from here.
-https://github.com/ipfs/ipfs-desktop
-
- Step2: Click on files and import a sample file.
-
-Step 3: Click on 3 dots and copy CID
-
-Step 4: Share the CID to someone else to open the shared file.  
-
-Step 5: Click on import □ Import from IPFS
-
-Step 6: The imported file will be visible.
-const crypto = require('crypto');
-
-class Block {
-    constructor(index, timestamp, operation, amount, previousHash = '', balance) {
-        this.index = index;
-        this.timestamp = timestamp;
-        this.operation = operation;
-        this.amount = amount;
-        this.previousHash = previousHash;
-        this.hash = this.calculateHash();
-    }
-    
-    calculateHash() {
-        return crypto.createHash('sha256').update(this.index + this.timestamp + this.operation +   this.amount + this.previousHash + this.balance).digest('hex');
-    }
-}
-
-class Finchain {
-    constructor() {
-        this.chain = [this.createGenesisBlock()];
-    }
-    createGenesisBlock() {
-        return new Block(0, '01-08-24', 'Initial', '100', '0', '100');
-    }
-    getLatesttBlock() {
-        return this.chain[this.chain.length - 1];
-    }
-    addBlock(operation, amount) {
-        const latestBlock = this.getLatesttBlock();
-        let newBalance = parseInt(latestBlock.balance);
-        
-        // Update balance based on operation
-        if (operation === 'credit') {
-            newBalance += parseInt(amount);
-        } else if (operation === 'debit') {
-            newBalance -= parseInt(amount);
-        }
-
-        const newBlock = new Block(
-            latestBlock.index + 1,
-            new Date().toISOString(),
-            operation,
-            amount,
-            latestBlock.hash,
-            newBalance.toString()
-        );
-
-        this.chain.push(newBlock);
-    }
-
-    isChainValid() {
-        for (let i = 1; i < this.chain.length; i++) {
-            const currentBlock = this.chain[i];
-            const previousBlock = this.chain[i - 1];
-
-            if (currentBlock.hash !== currentBlock.calculateHash()) {
-                return false;
-            }
-
-            if (currentBlock.previousHash !== previousBlock.hash) {
-                return false;
-            }
-        }
-        return true;
-    }
-}
+PRAC1: Implement Feed Forward NN and train the network with different optimizers and compare.
+
+# Import Statements
+import tensorflow as tf
+import numpy as np
+from sklearn.datasets import load_iris
+from sklearn.model_selection import train_test_split as tts
+from sklearn.preprocessing import LabelBinarizer
+
+# Load Iris Dataset
+iris = load_iris()
+
+# Get Features and output
+X = iris.data
+y = iris.target
+
+# One-hot encode labels
+lb = LabelBinarizer()
+y = lb.fit_transform(y)
+
+# Split data into train and test sets
+X_train, X_test, y_train, y_test = tts(X, y, test_size=0.2, random_state=42)
+
+# Define Model Architecture
+model = tf.keras.Sequential([
+    tf.keras.layers.Dense(16, activation='relu', input_shape=(4,)),
+    tf.keras.layers.Dense(8, activation='relu'),
+    tf.keras.layers.Dense(3, activation='softmax')
+])
+
+# Compile model with different optimizers
+optimizers = ['adam', 'sgd', 'rmsprop']
+for optimizer in optimizers:
+    model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+
+    # Train model
+    history = model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=50, verbose=0) # Try with different epochs and verbose
+
+    # Evaluate model
+    loss, accuracy = model.evaluate(X_test, y_test, verbose=0)
+
+    print('Optimizer', optimizer)
+    print('Test loss:', loss)
+    print('Test accuracy:', accuracy)
+
+
+##################################################################################
+
+
+
+PRAC2: Implementing binary classification using a publicly available dataset (Breast Cancer Wisconsin dataset) with L2 regularization in Tensorflow/Keras.
+
+#Import statements
+import numpy as np
+import pandas as pd
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras import regularizers
+
+# Load the dataset
+url = "https://archive.ics.uci.edu/ml/machine-learning-databases/breast-cancer-wisconsin/wdbc.data"
+column_names = ["ID", "Diagnosis", "Mean Radius", "Mean Texture", "Mean Perimeter", "Mean Area", "Mean Smoothness",
+                "Mean Compactness", "Mean Concavity", "Mean Concave Points", "Mean Symmetry", "Mean Fractal Dimension",
+                "SE Radius", "SE Texture", "SE Perimeter", "SE Area", "SE Smoothness", "SE Compactness",
+                "SE Concavity", "SE Concave Points", "SE Symmetry", "SE Fractal Dimension", "Worst Radius",
+                "Worst Texture", "Worst Perimeter", "Worst Area", "Worst Smoothness", "Worst Compactness",
+                "Worst Concavity", "Worst Concave Points", "Worst Symmetry", "Worst Fractal Dimension"]
+
+#Load the dataset
+data = pd.read_csv(url, header=None, names=column_names)
+
+#Map Maligant (M) to 1 and Benign (B) to 0
+data['Diagnosis'] = data['Diagnosis'].map({'M':1,'B':0})
+
+#Split features and target
+X = data.drop(['ID', 'Diagnosis'], axis=1)
+y = data['Diagnosis']
+
+#Split data into training and testing sets
+X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2, random_state=42)
+
+#Standardize features
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled = scaler.fit_transform(X_test)
+
+#Define model architecture
+model = Sequential([
+    Dense(64, activation='relu', kernel_regularizer=regularizers.l2(0.001), input_shape=(X_train.shape[1],)),
+    Dense(64, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
+    Dense(1, activation='sigmoid')
+])
+
+#Compile the model
+model.compile(optimizer='adam',
+              loss='binary_crossentropy',
+              metrics=['accuracy'])
+
+#Train the model
+history = model.fit(X_train_scaled, y_train,
+                    epochs=50,
+                    batch_size=32,
+                    validation_split=0.1)
+
+#Evaluate the model
+test_loss, test_acc = model.evaluate(X_test_scaled, y_test)
+print("Test Accuracy: ", test_acc)
+
+
+
+
+
+
+#######################################################################
+
+PRAC3: Program to implement regularization to prevent the model from overfitting.
+
+#Import statements
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+import tensorflow as tf
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
+from tensorflow.keras import regularizers
+
+#Load the data
+(train_data, train_labels), (test_data, test_labels) = tf.keras.datasets.mnist.load_data()
+
+#Preprocess the data
+train_data = train_data.reshape((60000, 784))/255.0
+test_data = test_data.reshape((10000,784))/255.0
+train_labels = tf.keras.utils.to_categorical(train_labels)
+test_labels =tf.keras.utils.to_categorical(test_labels)
+
+#Define the model architecture
+model = tf.keras.models.Sequential([
+    tf.keras.layers.Dense(128, activation='relu', input_shape=(784,),kernel_regularizer=tf.keras.regularizers.l2(0.01)),
+    tf.keras.layers.Dense(64, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.01)),
+    tf.keras.layers.Dense(10, activation='softmax')
+
+])
+
+#Compile the model
+model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+              loss='categorical_crossentropy',
+              metrics=['accuracy'])
+
+#Train the model
+history = model.fit(train_data, train_labels, epochs=50, batch_size=128, validation_data=(test_data,test_labels))
+
+#Plot training loss and validation loss
+plt.figure(figsize=(12,5))
+
+#Plot the training loss
+plt.subplot(1,2,1)
+plt.plot(history.history['loss'], label='Training Loss')
+plt.plot(history.history['val_loss'], label='Validation Loss')
+plt.title('Training and Validation Loss')
+plt.xlabel('Epochs')
+plt.ylabel('Loss')
+plt.legend()
+
+#Plot the training accuracy
+plt.subplot(1,2,2)
+plt.plot(history.history['accuracy'], label='Training Accuracy')
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
+plt.title('Training and Validation Accuracy')
+plt.xlabel('Epochs')
+plt.ylabel('Accuracy')
+plt.legend()
+
+plt.tight_layout()
+plt.show()
+
+
+####################################################################################
+
+PRAC4: Implement DL for the prediction of the autoencoder from the test data (MNIST dataset).
+
+#Import statements
+import tensorflow as tf
+from tensorflow import keras
+import numpy as np
+import matplotlib.pyplot as plt
+
+#Load the dataset
+(X_train, _), (X_test, _) = keras.datasets.mnist.load_data()
+
+#Normalise the pixel values to be between 0 and 1
+X_train = X_train.astype('float32') / 255.0
+X_test = X_test.astype('float32') / 255.0
+
+#Define the encoder architecture
+encoder = keras.models.Sequential([
+    keras.layers.Flatten(input_shape=[28, 28]),
+    keras.layers.Dense(128, activation="relu"),
+    keras.layers.Dense(64, activation="relu"),
+    keras.layers.Dense(32, activation="relu"),
+])
+
+#Define the decoder architecture
+decoder = keras.models.Sequential([
+    keras.layers.Dense(64, activation="relu", input_shape=[32]),
+    keras.layers.Dense(128, activation="relu"),
+    keras.layers.Dense(28 * 28, activation="sigmoid"),
+    keras.layers.Reshape([28, 28])
+])
+
+#Combine the encoder and decoder into an autoencoder model
+autoencoder = keras.models.Sequential([encoder, decoder])
+
+#Compile the autoencoder model
+autoencoder.compile(loss="binary_crossentropy", optimizer=keras.optimizers.Adam(learning_rate = 0.001))
+
+#Train the autoencoder model
+history = autoencoder.fit(X_train, X_train, epochs=10, batch_size=128, validation_data=(X_test, X_test))
+
+#Use the trained autoencoder to predict the reconstructed images for the test data
+decoded_imgs = autoencoder.predict(X_test)
+
+#Plot some of the original test images and their reconstructed counterparts
+n = 10
+plt.figure(figsize=(20, 4))
+for i in range(n):
+    ax = plt.subplot(2, n, i + 1)
+    plt.imshow(X_test[i])
+    plt.gray()
+    ax.get_xaxis().set_visible(False)
+    ax.get_yaxis().set_visible(False)
+
+    ax = plt.subplot(2, n, i + 1 + n)
+    plt.imshow(decoded_imgs[i])
+    plt.gray()
+    ax.get_xaxis().set_visible(False)
+    ax.get_yaxis().set_visible(False)
+
+plt.show()
+
+
+
+
+##########################################################################################
+
+PRAC5: Implement Convolutional Neural Network for Digit Recognition on the MNIST Dataset.
+
+#Import statements
+import tensorflow as tf
+from tensorflow import keras
+import numpy as np
+import matplotlib.pyplot as plt
+
+#Load the dataset
+(X_train, y_train), (X_test, y_test) = keras.datasets.mnist.load_data()
+
+#Normalise the pixel values to be between 0 and 1
+X_train = X_train.astype('float32') / 255.0
+X_test = X_test.astype('float32') / 255.0
+X_train = np.expand_dims(X_train, axis=-1)
+X_test = np.expand_dims(X_test, axis=-1)
+
+#Define the CNN architecture
+model = keras.models.Sequential([
+    keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)),
+    keras.layers.MaxPooling2D((2, 2)),
+    keras.layers.Conv2D(64, (3, 3), activation='relu'),
+    keras.layers.MaxPooling2D((2, 2)),
+    keras.layers.Flatten(),
+    keras.layers.Dense(64, activation='relu'),
+    keras.layers.Dense(10, activation='softmax')
+])
+
+#Compile the model
+model.compile(optimizer='adam',
+              loss='sparse_categorical_crossentropy',
+              metrics=['accuracy'])
+
+#Train the model
+history = model.fit(X_train, y_train, epochs=15, batch_size=128, validation_data=(X_test, y_test))
+
+#Evaluate the model on the test data
+test_loss, test_acc = model.evaluate(X_test, y_test)
+print('Test accuracy:', test_acc)
+
+#Show prediction for a sample input image
+sample_image = X_test[0]
+sample_label = y_test[0]
+sample_image = np.expand_dims(sample_image, 0)
+pred = model.predict(sample_image)
+pred_label = np.argmax(pred)
+print('Predicted label:', pred_label)
+print('True label:', sample_label)
+
+#Display the sample image
+plt.imshow(sample_image.squeeze(), cmap='gray')
+plt.show()
+
+
+
+####################################################################
+
+PRAC6:Transfer Learning on Suitable Dataset
+
+
+# Implement Transfer learning on the suitable public dataset (e.g. classify the cats versus dogs dataset from Kaggle or UCI or inbuilt dataset)
+
+import tensorflow as tf
+import numpy as np
+import matplotlib.pyplot as plt
+import os
+import tensorflow.keras.models
+import zipfile
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras.applications import VGG16
+
+# Download and extract dataset
+url = "https://storage.googleapis.com/mledu-datasets/cats_and_dogs_filtered.zip"
+filename = "cats_and_dogs_filtered.zip"  # Just the filename
+cached_file_path = tf.keras.utils.get_file(filename, url, cache_dir=os.getcwd())  # Specify cache_dir and get the path
+#Use the cached file path instead of just the filename
+with zipfile.ZipFile(cached_file_path, "r") as zip_ref: 
+    zip_ref.extractall()
+
+#Define data generators
+train_dir = os.path.join(os.getcwd(), "cats_and_dogs_filtered","train")
+validation_dir = os.path.join(os.getcwd(), "cats_and_dogs_filtered","validation")
+
+train_datagen = ImageDataGenerator(rescale = 1./255,
+                                   rotation_range = 20,
+                                   width_shift_range = 0.2,
+                                   height_shift_range = 0.2,
+                                   shear_range = 0.2,
+                                   zoom_range = 0.2,
+                                   horizontal_flip = True)
+
+validation_datagen = ImageDataGenerator(rescale = 1./255)
+
+train_generator = train_datagen.flow_from_directory(train_dir,
+                                                   target_size = (150,150),
+                                                   batch_size = 20,
+                                                   class_mode = "binary")
+
+validation_generator = validation_datagen.flow_from_directory(validation_dir,
+                                                              target_size = (150,150),
+                                                              batch_size = 20,
+                                                              class_mode = "binary"
+                                                              )
+
+# Load pre - trained VGG16 model
+conv_base = VGG16(weights = "imagenet",
+                  include_top = False,
+                  input_shape = (150,150,3))
+
+#Freeze convolutional base layers
+conv_base.trainable = False
+
+#Build model on top of the convolutional base
+model = tf.keras.models.Sequential()
+model.add(conv_base)
+model.add(tf.keras.layers.Flatten())
+model.add(tf.keras.layers.Dense(256,activation = "relu"))
+model.add(tf.keras.layers.Dropout(0.5))
+model.add(tf.keras.layers.Dense(1,activation = "sigmoid"))
+
+#Compile model
+model.compile(loss = "binary_crossentropy",
+              optimizer = tf.keras.optimizers.RMSprop(learning_rate = 2e-5),
+              metrics = ["accuracy"])
+
+#Train model
+history = model.fit(train_generator,
+                    steps_per_epoch = 5,
+                    epochs = 5,
+                    validation_data = validation_generator,
+                    validation_steps = 50)
+
+#Show sample input and its predicted class
+x, y_true = next(validation_generator)
+y_pred = model.predict(x)
+class_names = ['cat','dog']
+
+for i in range(len(x)):
+    plt.imshow(x[i])
+    plt.title(f'Predicted class: {class_names[int(round(y_pred[i][0]))]}, True class: {class_names[int(y_true[i])]}')
+    plt.show()
+
+#Plot accuracy and loss over time
+acc = history.history['accuracy']
+val_acc = history.history['val_accuracy']
+loss = history.history['loss']
+val_loss = history.history['val_loss']
+
+epochs = range(1, len(acc) + 1)
+
+plt.plot(epochs, acc, "bo", label = "Training acc")
+plt.plot(epochs, val_acc, "b", label = "Validation acc")
+plt.title("Training and validation accuracy")
+plt.legend()
+
+
+
+####################################################################################
+
+PRAC7: Stock Price Prediction using LSTM and GRU Models.
+
+#Import Statements
+import yfinance as yf
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+from sklearn.preprocessing import MinMaxScaler
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import LSTM, GRU, Dense
+
+#Load stock data from Yahoo Finance
+stock_symbol = 'AAPL'
+df = yf.download(stock_symbol, start="2010-01-01", end="2023-01-01")
+
+#Use the 'Close' price for modeling
+data = df[['Close']].values
+
+#Normalise the data
+scaler = MinMaxScaler(feature_range=(0,1))
+data_scaled = scaler.fit_transform(data)
+
+#Split the data into train and test sets
+train_size = int(len(data_scaled) * 0.8)
+train, test = data_scaled[0:train_size], data_scaled[train_size:]
+
+#Convert the data into time-series format
+def create_dataset(dataset, look_back=1):
+    X, Y = [], []
+    for i in range(len(dataset) - look_back):
+        X.append(data[i:(i+look_back), 0])
+        Y.append(data[i+look_back, 0])
+    return np.array(X), np.array(Y)
+
+look_back = 60
+X_train, y_train = create_dataset(train, look_back)
+X_test, y_test = create_dataset(test, look_back)
+
+#Reshape input to be [samples, time steps, features]
+X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
+X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
+
+#Build LSTM Model
+model_lstm = Sequential()
+model_lstm.add(LSTM(50, input_shape=(look_back, 1)))
+model_lstm.add(Dense(1))
+model_lstm.compile(loss='mean_squared_error', optimizer='adam')
+
+#Build GRU Model
+model_gru = Sequential()
+model_gru.add(GRU(50, input_shape=(look_back, 1)))
+model_gru.add(Dense(1))
+model_gru.compile(loss='mean_squared_error', optimizer='adam')
+
+#Train the model
+model_lstm.fit(X_train, y_train, epochs=20, batch_size=32, verbose=1)
+model_gru.fit(X_train, y_train, epochs=20, batch_size=32, verbose=1)
+
+#Make Predictions
+lstm_predictions = model_lstm.predict(X_test)
+gru_predictions = model_gru.predict(X_test)
+
+#Inverse transform predictions and actual values
+lstm_predictions = scaler.inverse_transform(lstm_predictions)
+gru_predictions = scaler.inverse_transform(gru_predictions)
+y_test_actual = scaler.inverse_transform([y_test])
+
+#Future predictions (next 30 days)
+future_steps = 30
+last_sequence = X_test[-1] #Last sequence in test data
+
+#Predict future predictions using the LSTM Model
+future_predictions_lstm = []
+for i in range(future_steps):
+    prediction = model_lstm.predict(np.reshape(last_sequence, (1, look_back, 1)))
+    future_predictions_lstm.append(prediction[0][0])
+    last_sequence = np.append(last_sequence[1:], prediction[0][0])
+
+#Predict future prices using the GRU Model
+last_sequence = X_test[-1]
+future_predictions_gru = []
+for i in range(future_steps):
+    prediction = model_gru.predict(np.reshape(last_sequence, (1, look_back, 1)))
+    future_predictions_gru.append(prediction[0][0])
+    last_sequence = np.append(last_sequence[1:], prediction[0][0])
+
+#Inverse transform future predictions
+future_predictions_lstm = scaler.inverse_transform(np.array(future_predictions_lstm).reshape(-1, 1))
+future_predictions_gru = scaler.inverse_transform(np.array(future_predictions_gru).reshape(-1, 1))
+
+#Create a new time range for future predictions
+future_range = np.arange(len(y_test_actual[0]), len(y_test_actual[0]) + future_steps)
+
+#Plot the results
+plt.figure(figsize=(14,7))
+plt.plot(y_test_actual[0], label='Actual Price', color='blue')
+plt.plot(lstm_predictions, label='LSTM Predictions', color='orange')
+plt.plot(gru_predictions, label='GRU Predictions', color='green')
+
+#Plot the future predictions
+plt.plot(future_range, future_predictions_lstm, label='Future LSTM Predictions', color='red', linestyle='--')
+plt.plot(future_range, future_predictions_gru, label='Future GRU Predictions', color='purple', linestyle='--')
+
+plt.title(f'{stock_symbol} Stock price prediction and future forecasting - LSTM vs GRU')
+plt.xlabel('Time Steps')
+plt.ylabel('Stock Price')
+plt.legend()
+plt.show()
+
+
+
+#################################################################################
+
+
+PRAC8: Implementaton of GAN for generating synthetic shapes.
+
+import tensorflow as tf
+import numpy as np
+import matplotlib.pyplot as plt
+
+#Check if TF is able to detect the gpu
+print(tf.config.list_physical_devices('GPU'))
+
+#Set the GPU device to use
+device_name = '/device:GPU:0'
+
+mnist = tf.keras.datasets.mnist
+(train_images, train_labels), (_, _) = mnist.load_data()
+
+#Normalize the images to [-1, -1]
+train_images = (train_images.astype('float32') - 127.5) / 127.5
+
+#Reshape the images to (28, 28, 1) and a channel dimension
+train_images = np.expand_dims(train_images, axis=-1)
+
+#Batch and shuffle the data
+BUFFER_SIZE = 60000
+BATCH_SIZE = 256
+train_dataset = tf.data.Dataset.from_tensor_slices(train_images).shuffle(BUFFER_SIZE).batch(BATCH_SIZE)
+
+def make_gen_model():
+    model = tf.keras.Sequential()
+    model.add(tf.keras.layers.Dense(7*7*256, use_bias=False, input_shape=(100,)))
+    model.add(tf.keras.layers.BatchNormalization())
+    model.add(tf.keras.layers.LeakyReLU())
+
+    model.add(tf.keras.layers.Reshape((7, 7, 256)))
+    assert model.output_shape == (None, 7, 7, 256)
+
+    model.add(tf.keras.layers.Conv2DTranspose(128, (5, 5), strides=(1, 1), padding='same', use_bias=False))
+    assert model.output_shape == (None, 7, 7, 128)
+    model.add(tf.keras.layers.BatchNormalization())
+    model.add(tf.keras.layers.LeakyReLU())
+
+    model.add(tf.keras.layers.Conv2DTranspose(64, (5, 5), strides=(2, 2), padding='same', use_bias=False))
+    assert model.output_shape == (None, 14, 14, 64)
+    model.add(tf.keras.layers.BatchNormalization())
+    model.add(tf.keras.layers.LeakyReLU())
+
+    model.add(tf.keras.layers.Conv2DTranspose(1, (5, 5), strides=(2, 2), padding='same', use_bias=False, activation='tanh'))
+    assert model.output_shape == (None, 28, 28, 1)
+
+    return model
+
+def make_disc_model():
+    model = tf.keras.Sequential()
+    model.add(tf.keras.layers.Conv2D(64, (5, 5), strides=(2, 2), padding='same', input_shape=[28, 28, 1]))
+    model.add(tf.keras.layers.LeakyReLU())
+    model.add(tf.keras.layers.Dropout(0.3))
+
+    model.add(tf.keras.layers.Conv2D(128, (5, 5), strides=(2, 2), padding='same'))
+    model.add(tf.keras.layers.LeakyReLU())
+    model.add(tf.keras.layers.Dropout(0.3))
+
+    model.add(tf.keras.layers.Flatten())
+    model.add(tf.keras.layers.Dense(1))
+
+    return model
+
+cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)
+
+def discriminator_loss(real_output, fake_output):
+    real_loss = cross_entropy(tf.ones_like(real_output), real_output)
+    fake_loss = cross_entropy(tf.zeros_like(fake_output), fake_output)
+    total_loss = real_loss + fake_loss
+    return total_loss
+
+def generator_loss(fake_output):
+    return cross_entropy(tf.ones_like(fake_output), fake_output)
+
+#Define the models
+generator = make_gen_model()
+discriminator = make_disc_model()
+
+#Define the optimizers
+generator_optimizer = tf.keras.optimizers.Adam(1e-4)
+discriminator_optimizer = tf.keras.optimizers.Adam(1e-4)
+
+#Define the training loop
+EPOCHS = 100
+noise_dim = 100
+num_examples_to_generate = 16
+
+@tf.function
+def train_step(images):
+    #Generate noise
+    noise = tf.random.normal([BATCH_SIZE, noise_dim])
+
+    with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
+        #Generate fake images
+        generated_images = generator(noise, training=True)
+
+        #Evaluate discriminator on real/fake images
+        real_output = discriminator(images, training=True)
+        fake_output = discriminator(generated_images, training=True)
+
+        #Calculate the losses
+        gen_loss = generator_loss(fake_output)
+        disc_loss = discriminator_loss(real_output, fake_output)
+
+    #Calculate the gradients and apply them
+    gradients_of_generator = gen_tape.gradient(gen_loss, generator.trainable_variables)
+    gradients_of_discriminator = disc_tape.gradient(disc_loss, discriminator.trainable_variables)
+
+    generator_optimizer.apply_gradients(zip(gradients_of_generator, generator.trainable_variables))
+    discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, discriminator.trainable_variables))
+
+def generate_and_save_images(model, epoch, test_input):
+    #Generate images from the model
+    predictions = model(test_input, training=False)
+
+    #Rescale to [0, 1]
+    predictions = (predictions + 1) / 2.0
+
+    #Plot the images
+    fig = plt.figure(figsize=(4, 4))
+    for i in range(predictions.shape[0]):
+        plt.subplot(4, 4, i+1)
+        plt.imshow(predictions[i, :, :, 0], cmap='gray')
+        plt.axis('off')
+
+    #Save the figure
+    plt.savefig('image_at_epoch_{:04d}.png'.format(epoch))
+    plt.show()
+
+#Generate a fixed set of noise for evaluating the model during training
+fixed_noise = tf.random.normal([num_examples_to_generate, noise_dim])
+
+#Train the model
+for epoch in range(EPOCHS):
+    for image_batch in train_dataset:
+      train_step(image_batch)
+
+    #Generate and save images every 10 epochs
+    if (epoch + 1) % 10 == 0:
+        generate_and_save_images(generator, epoch + 1, fixed_noise)
+
+    #Print progress every epoch
+    print('Epoch {} completed'.format(epoch + 1))
+
+
+############################################################################################
+
+PRAC9: Implementing a simple form of a RNN for Stock Price Prediction.
+
+import numpy as np
+import matplotlib.pyplot as plt
+import torch
+import torch.nn as nn
+from sklearn.preprocessing import MinMaxScaler
+
+# Detect GPU
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device}")
+
+# 1. Simulate Stock Prices
+np.random.seed(42)
+time_steps = np.linspace(0, 100, 400)
+prices = np.sin(time_steps) + np.random.normal(scale=0.5, size=len(time_steps))
+
+# 2. Visualize Data
+plt.figure(figsize=(10, 6))
+plt.plot(time_steps, prices, label='Stock Price')
+plt.title('Simulated Stock Prices')
+plt.xlabel('Time')
+plt.ylabel('Price')
+plt.legend()
+plt.show()
+
+# 3. Normalize Data
+scaler = MinMaxScaler(feature_range=(-1, 1))
+prices_normalized = scaler.fit_transform(prices.reshape(-1, 1))
+
+# 4. Prepare Data (Sliding Window)
+def sliding_windows(data, seq_length):
+    x, y = [], []
+    for i in range(len(data) - seq_length):
+        x.append(data[i:i+seq_length])
+        y.append(data[i+seq_length])
+    return np.array(x), np.array(y)
+
+seq_length = 10  # Increased sequence length for better learning
+x, y = sliding_windows(prices_normalized, seq_length)
+
+# Convert to PyTorch tensors and move to GPU
+train_size = int(len(y) * 0.67)
+test_size = len(y) - train_size
+
+batch_size = 64  # Increase batch size for better GPU utilization
+# Create training and test sets
+trainX = torch.Tensor(x[:train_size]).view(-1, seq_length, 1).to(device)
+trainY = torch.Tensor(y[:train_size]).to(device)
+
+testX = torch.Tensor(x[train_size:]).view(-1, seq_length, 1).to(device)
+testY = torch.Tensor(y[train_size:]).to(device)
+
+fullX = torch.Tensor(x).view(-1, seq_length, 1).to(device)  # For full dataset prediction
+
+# 5. Define Optimized LSTM Model
+class OptimizedLSTM(nn.Module):
+    def __init__(self, input_size, hidden_size, num_layers, output_size):
+        super(OptimizedLSTM, self).__init__()
+        self.hidden_size = hidden_size
+        self.num_layers = num_layers
+
+        # Enable cuDNN optimizations
+        self.lstm = nn.LSTM(input_size, hidden_size, num_layers,
+                            batch_first=True, bidirectional=False).to(device)
+
+        self.fc = nn.Linear(hidden_size, output_size)
+
+    def forward(self, x):
+            h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device).detach()
+            c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device).detach()
+
+            # Enable cuDNN optimization
+            with torch.backends.cudnn.flags(enabled=True):
+                out, _ = self.lstm(x, (h0, c0))
+
+            out = self.fc(out[:, -1, :])  # Use last time step output
+            return out
+
+# 6. Set Hyperparameters
+input_size = 1
+hidden_size = 128  # Increased hidden size
+num_layers = 3  # More layers for better learning
+output_size = 1
+num_epochs = 500  # Lower epochs due to larger batch size
+learning_rate = 0.001
+
+# 7. Initialize Model, Loss, and Optimizer
+model = OptimizedLSTM(input_size, hidden_size, num_layers, output_size).to(device)
+criterion = nn.MSELoss()
+optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
+
+# Use mixed precision training (automatic mixed precision AMP)
+scaler_amp = torch.cuda.amp.GradScaler()
+
+# 8. Train Model with Mixed Precision
+for epoch in range(num_epochs):
+    model.train()
+    optimizer.zero_grad()
+
+    # Use automatic mixed precision for faster computation
+    with torch.cuda.amp.autocast():
+        outputs = model(trainX)
+        loss = criterion(outputs, trainY)
+
+    # Scale loss and backward pass
+    scaler_amp.scale(loss).backward()
+
+    # Clip gradients to avoid explosion
+    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
+
+    # Update weights
+    scaler_amp.step(optimizer)
+    scaler_amp.update()
+
+    if epoch % 50 == 0:
+        print(f"Epoch [{epoch}/{num_epochs}], Loss: {loss.item():.6f}")
+
+# 9. Evaluate Model
+model.eval()
+with torch.no_grad():
+    train_predict = model(trainX)
+    test_predict = model(testX)
+    full_predict = model(fullX)  # Predict for the entire dataset
+
+# 10. Move Predictions Back to CPU
+train_predict = scaler.inverse_transform(train_predict.cpu().numpy())
+test_predict = scaler.inverse_transform(test_predict.cpu().numpy())
+full_predict = scaler.inverse_transform(full_predict.cpu().numpy())
+actual_prices = scaler.inverse_transform(y)
+
+# 11. Plot Results
+plt.figure(figsize=(10, 6))
+plt.axvline(x=train_size, c='r', linestyle='--', label='Train/Test Split')
+
+# Plot actual prices
+plt.plot(actual_prices, label='Actual Price', color='blue')
+
+
 
 
 ####################################################################################

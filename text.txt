@@ -1,113 +1,161 @@
-PRAC1: Implement Feed Forward NN and train the network with different optimizers and compare.
+PRAC1: Implementation of a basic document retrieval system using an inverted index in Python
 
-# Import Statements
-import tensorflow as tf
-import numpy as np
-from sklearn.datasets import load_iris
-from sklearn.model_selection import train_test_split as tts
-from sklearn.preprocessing import LabelBinarizer
+from collections import defaultdict
 
-# Load Iris Dataset
-iris = load_iris()
+class InvertedIndex:
+    def __init__(self, documents):
+        self.documents = documents
+        self.index = defaultdict(set)
+        #Dictionary to store the inverted index
+        self.build_index()
 
-# Get Features and output
-X = iris.data
-y = iris.target
+    def build_index(self):
+        for doc_id, text in self.documents.items():
+            #Convert text to lowercase and split into words
+            words = set(text.lower().split())
 
-# One-hot encode labels
-lb = LabelBinarizer()
-y = lb.fit_transform(y)
+            #Map the word to the document ID
+            for word in words:
+                self.index[word].add(doc_id)
 
-# Split data into train and test sets
-X_train, X_test, y_train, y_test = tts(X, y, test_size=0.2, random_state=42)
+    def search(self, query):
+        # Convert query to lowercase and split
+        query_words = query.lower().split()
+        if not query_words:
+            #Return empty set if query is empty
+            return set()
 
-# Define Model Architecture
-model = tf.keras.Sequential([
-    tf.keras.layers.Dense(16, activation='relu', input_shape=(4,)),
-    tf.keras.layers.Dense(8, activation='relu'),
-    tf.keras.layers.Dense(3, activation='softmax')
-])
+        #Retrieve the set of documents for each query word
+        result_sets = [self.index[word] for word in query_words if word in self.index]
+        if not result_sets:
+            return set()
 
-# Compile model with different optimizers
-optimizers = ['adam', 'sgd', 'rmsprop']
-for optimizer in optimizers:
-    model.compile(optimizer=optimizer, loss='categorical_crossentropy', metrics=['accuracy'])
+        #If none of the words are found, return an empty set
+        #Perform intersection to get documents containing all words
+        return set.intersection(*result_sets)
 
-    # Train model
-    history = model.fit(X_train, y_train, validation_data=(X_test, y_test), epochs=50, verbose=0) # Try with different epochs and verbose
+#Sample Documents
+documents = {
+    1: "Web Content extraction involves retrieving structured data",
+    2: "Search engines use document indexing for efficient retrieval",
+    3: "Document retrieval is important in web mining applications",
+    4: "Indexing helps in retrieving relevant documents based on query terms"
+}
 
-    # Evaluate model
-    loss, accuracy = model.evaluate(X_test, y_test, verbose=0)
+#Create the inverted index
+index = InvertedIndex(documents)
 
-    print('Optimizer', optimizer)
-    print('Test loss:', loss)
-    print('Test accuracy:', accuracy)
+#Example search queries
+queries = ["retrieval", "document indexing", "web mining", "structured data"]
+
+for query in queries:
+    result = index.search(query)
+    print(f"Query: '{query}' -> Documents: {sorted(result) if result else 'No Matching Documents'}")
 
 
 ##################################################################################
 
 
 
-PRAC2: Implementing binary classification using a publicly available dataset (Breast Cancer Wisconsin dataset) with L2 regularization in Tensorflow/Keras.
+PRAC2: Implementation of Retrieval Models (Boolean Model & Vector Space Model).
 
-#Import statements
+from collections import defaultdict
 import numpy as np
-import pandas as pd
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
-from tensorflow.keras import regularizers
+from sklearn.feature_extraction.text import TfidfVectorizer
 
-# Load the dataset
-url = "https://archive.ics.uci.edu/ml/machine-learning-databases/breast-cancer-wisconsin/wdbc.data"
-column_names = ["ID", "Diagnosis", "Mean Radius", "Mean Texture", "Mean Perimeter", "Mean Area", "Mean Smoothness",
-                "Mean Compactness", "Mean Concavity", "Mean Concave Points", "Mean Symmetry", "Mean Fractal Dimension",
-                "SE Radius", "SE Texture", "SE Perimeter", "SE Area", "SE Smoothness", "SE Compactness",
-                "SE Concavity", "SE Concave Points", "SE Symmetry", "SE Fractal Dimension", "Worst Radius",
-                "Worst Texture", "Worst Perimeter", "Worst Area", "Worst Smoothness", "Worst Compactness",
-                "Worst Concavity", "Worst Concave Points", "Worst Symmetry", "Worst Fractal Dimension"]
+class BooleanRetrieval:
+    def __init__(self, documents):
+        """
+        Initializes the inverted index for Boolean Retrieval.
+        :param documents: A dictionary where keys are document IDs and values are document text.
+        """
+        self.documents = documents
+        self.inverted_index = defaultdict(set)  #Dictionary to store the inverted index
+        self.build_index()
 
-#Load the dataset
-data = pd.read_csv(url, header=None, names=column_names)
+    def build_index(self):
+        """Builds the inverted index from the provided documents."""
+        for doc_id, text in self.documents.items():
+            words = set(text.lower().split())  #Convert text to lowercase and split into words
+            for word in words:
+                self.inverted_index[word].add(doc_id)  #Map word to document ID
 
-#Map Maligant (M) to 1 and Benign (B) to 0
-data['Diagnosis'] = data['Diagnosis'].map({'M':1,'B':0})
+    def boolean_search(self, query):
+        """
+        Performs a Boolean search with AND, OR, and NOT operations.
+        :param query: A Boolean search query (e.g., "retrieval AND document").
+        :return: A set of document IDs matching the query.
+        """
+        terms = query.lower().split()  #Convert query to lowercase and split
+        result_set = set(self.documents.keys())  
 
-#Split features and target
-X = data.drop(['ID', 'Diagnosis'], axis=1)
-y = data['Diagnosis']
+        operation = "AND"  #Default operation
+        for term in terms:
+            if term == "and":
+                operation = "AND"
+            elif term == "or":
+                operation = "OR"
+            elif term == "not":
+                operation = "NOT"
+            else:
+                if operation == "AND":
+                    result_set &= self.inverted_index.get(term, set())
+                elif operation == "OR":
+                    result_set |= self.inverted_index.get(term, set())
+                elif operation == "NOT":
+                    result_set -= self.inverted_index.get(term, set())
 
-#Split data into training and testing sets
-X_train, X_test, y_train, y_test = train_test_split(X,y,test_size=0.2, random_state=42)
+        return result_set
 
-#Standardize features
-scaler = StandardScaler()
-X_train_scaled = scaler.fit_transform(X_train)
-X_test_scaled = scaler.fit_transform(X_test)
+class VectorSpaceRetrieval:
+    def __init__(self, documents):
+        """
+        Initializes the TF-IDF vectorization for document retrieval.
+        :param documents: A dictionary where keys are document IDs and values are document text.
+        """
+        self.documents = documents
+        self.vectorizer = TfidfVectorizer()
+        self.doc_ids = list(documents.keys())
+        self.doc_vectors = self.vectorizer.fit_transform(documents.values())  #Compute TF-IDF vectors
 
-#Define model architecture
-model = Sequential([
-    Dense(64, activation='relu', kernel_regularizer=regularizers.l2(0.001), input_shape=(X_train.shape[1],)),
-    Dense(64, activation='relu', kernel_regularizer=regularizers.l2(0.001)),
-    Dense(1, activation='sigmoid')
-])
+    def vector_search(self, query):
+        """
+        Performs a vector space search using cosine similarity.
+        :param query: A text query.
+        :return: A list of (document ID, similarity score) sorted by relevance.
+        """
+        query_vector = self.vectorizer.transform([query])  #Convert query to TF-IDF vector
+        similarities = np.dot(self.doc_vectors, query_vector.T).toarray().flatten()  #Compute cosine similarity
+        ranked_results = sorted(zip(self.doc_ids, similarities), key=lambda x: x[1], reverse=True)
 
-#Compile the model
-model.compile(optimizer='adam',
-              loss='binary_crossentropy',
-              metrics=['accuracy'])
+        return ranked_results
 
-#Train the model
-history = model.fit(X_train_scaled, y_train,
-                    epochs=50,
-                    batch_size=32,
-                    validation_split=0.1)
+#Sample docs
+documents = {
+    1: "Web content extraction involves retrieving structured data",
+    2: "Search engines use document indexing for efficient retrieval",
+    3: "Document retrieval is important in web mining applications",
+    4: "Indexing helps in retrieving relevant documents based on query terms"
+}
 
-#Evaluate the model
-test_loss, test_acc = model.evaluate(X_test_scaled, y_test)
-print("Test Accuracy: ", test_acc)
+#Boolean Retrieval System
+boolean_index = BooleanRetrieval(documents)
+boolean_queries = ["retrieval AND document", "document OR indexing", "retrieval NOT indexing"]
+
+print("\n=== Boolean Retrieval Results ===")
+for query in boolean_queries:
+    result = boolean_index.boolean_search(query)
+    print(f"Query: '{query}' → Documents: {sorted(result) if result else 'No matching documents'}")
+
+# Vector Space Retrieval System
+vector_index = VectorSpaceRetrieval(documents)
+vector_queries = ["document retrieval", "web mining", "structured data"]
+
+print("\n=== Vector Space Model Results ===")
+for query in vector_queries:
+    result = vector_index.vector_search(query)
+    print(f"Query: '{query}' → Ranked Documents: {[(doc, round(score, 4)) for doc, score in result if score > 0]}")
+
 
 
 
@@ -116,696 +164,388 @@ print("Test Accuracy: ", test_acc)
 
 #######################################################################
 
-PRAC3: Program to implement regularization to prevent the model from overfitting.
+PRAC3: Spelling Correction in Information Retrieval Systems using Levenshtein Distance.
 
-#Import statements
+from collections import defaultdict
 import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-import tensorflow as tf
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import Dense
-from tensorflow.keras import regularizers
+ 
+class InvertedIndex:
+    def __init__(self, documents):
+        """
+        Initializes the inverted index with a given set of documents.
+        :param documents: A dictionary where keys are document IDs and values are document text.
+        """
+        self.documents = documents
+        self.index = defaultdict(set)  # Dictionary to store the inverted index
+        self.vocabulary = set()  # Stores unique words for spell correction
+        self.build_index()
+ 
+    def build_index(self):
+        """Builds the inverted index from the provided documents."""
+        for doc_id, text in self.documents.items():
+            words = set(text.lower().split()) # Convert text to lowercase and split into words
+            self.vocabulary.update(words)  # Store words for spell correction
+            for word in words:
+                self.index[word].add(doc_id)  # Map the word to the document ID
+ 
+    def search(self, query):
+        """
+        Searches for documents containing words in the query.
+        :param query: A user query string containing potentially misspelled words.
+        :return: A set of document IDs matching the corrected query words.
+        """
+        corrected_words = [self.correct_spelling(word) for word in query.lower().split()]
+        print(f"Corrected Query: {' '.join(corrected_words)}")
+    
+        result_sets = [self.index[word] for word in corrected_words if word in self.index]
+    
+        if not result_sets:
+            return set()  # If none of the words are found, return empty set
+    
+        return set.intersection(*result_sets)  # Find common documents for all words
+ 
+    def correct_spelling(self, word):
+        """
+        Corrects the spelling of a given word using the Levenshtein Distance.
+    
+        :param word: The potentially misspelled word.
+        :return: The closest matching word from the vocabulary.
+        """
+        min_distance = float('inf')
+        best_match = word  # Default to original word if no close match is found
+    
+        for vocab_word in self.vocabulary:
+            distance = self.levenshtein_distance(word, vocab_word)
+            if distance < min_distance:
+                min_distance = distance
+                best_match = vocab_word  # Update best match if a closer word is found
+    
+        return best_match
+    
+    def levenshtein_distance(self, s1, s2):
+        """
+        Computes the Levenshtein Distance between two words.
+    
+        :param s1: First word.
+        :param s2: Second word.
+        :return: The edit distance between the two words.
+        """
+        len_s1, len_s2 = len(s1), len(s2)
+        dp = np.zeros((len_s1 + 1, len_s2 + 1), dtype=int)
+    
+        for i in range(len_s1 + 1):
+            for j in range(len_s2 + 1):
+                if i == 0:
+                    dp[i][j] = j
+                elif j == 0:
+                    dp[i][j] = i
+                elif s1[i - 1] == s2[j - 1]:
+                    dp[i][j] = dp[i - 1][j - 1]
+                else:
+                    dp[i][j] = 1 + min(dp[i - 1][j], # Deletion
+                                        dp[i][j - 1],  # Insertion
+                                        dp[i - 1][j - 1])  # Substitution
+    
+        return dp[len_s1][len_s2]
+ 
+# Sample documents
+documents = {
+   1: "Web content extraction involves retrieving structured data",
+   2: "Search engines use document indexing for efficient retrieval",
+   3: "Document retrieval is important in web mining applications",
+   4: "Indexing helps in retrieving relevant documents based on query terms"
+}
+ 
+# Create the inverted index
+index = InvertedIndex(documents)
+ 
+# Example search queries with misspelled words
+queries = ["retrievel", "documnt indexing", "web minng", "strctured data"]
+ 
+print("\n=== Spelling Correction and Document Retrieval ===")
+for query in queries:
+   result = index.search(query)
+   print(f"Query: '{query}' → Corrected Documents: {sorted(result) if result else 'No matching documents'}")
 
-#Load the data
-(train_data, train_labels), (test_data, test_labels) = tf.keras.datasets.mnist.load_data()
-
-#Preprocess the data
-train_data = train_data.reshape((60000, 784))/255.0
-test_data = test_data.reshape((10000,784))/255.0
-train_labels = tf.keras.utils.to_categorical(train_labels)
-test_labels =tf.keras.utils.to_categorical(test_labels)
-
-#Define the model architecture
-model = tf.keras.models.Sequential([
-    tf.keras.layers.Dense(128, activation='relu', input_shape=(784,),kernel_regularizer=tf.keras.regularizers.l2(0.01)),
-    tf.keras.layers.Dense(64, activation='relu', kernel_regularizer=tf.keras.regularizers.l2(0.01)),
-    tf.keras.layers.Dense(10, activation='softmax')
-
-])
-
-#Compile the model
-model.compile(optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
-              loss='categorical_crossentropy',
-              metrics=['accuracy'])
-
-#Train the model
-history = model.fit(train_data, train_labels, epochs=50, batch_size=128, validation_data=(test_data,test_labels))
-
-#Plot training loss and validation loss
-plt.figure(figsize=(12,5))
-
-#Plot the training loss
-plt.subplot(1,2,1)
-plt.plot(history.history['loss'], label='Training Loss')
-plt.plot(history.history['val_loss'], label='Validation Loss')
-plt.title('Training and Validation Loss')
-plt.xlabel('Epochs')
-plt.ylabel('Loss')
-plt.legend()
-
-#Plot the training accuracy
-plt.subplot(1,2,2)
-plt.plot(history.history['accuracy'], label='Training Accuracy')
-plt.plot(history.history['val_accuracy'], label='Validation Accuracy')
-plt.title('Training and Validation Accuracy')
-plt.xlabel('Epochs')
-plt.ylabel('Accuracy')
-plt.legend()
-
-plt.tight_layout()
-plt.show()
 
 
 ####################################################################################
 
-PRAC4: Implement DL for the prediction of the autoencoder from the test data (MNIST dataset).
+PRAC4: Implementation of Evaluation Metrics for IR Systems (Precision, Recall, F1 - Score).
 
-#Import statements
-import tensorflow as tf
-from tensorflow import keras
-import numpy as np
-import matplotlib.pyplot as plt
+def calculate_precision(tp, fp):
+    """
+    Calculates Precision: Precision = TP / (TP + FP)
+    :param tp: True Positives (correctly retrieved relevant documents)
+    :param fp: False Positives (incorrectly retrieved non-relevant documents)
+    :return: Precision value
+    """
+    if tp + fp == 0:
+        return 0.0  # Avoid division by zero
+    return tp / (tp + fp)
+ 
+def calculate_recall(tp, fn):
+    """
+    Calculates Recall: Recall = TP / (TP + FN)
+    :param tp: True Positives (correctly retrieved relevant documents)
+    :param fn: False Negatives (relevant documents not retrieved)
+    :return: Recall value
+    """
+    if tp + fn == 0:
+        return 0.0  # Avoid division by zero
+    return tp / (tp + fn)
+ 
+def calculate_f1_score(precision, recall):
+    """
+    Calculates F1-Score: F1 = 2 * (Precision * Recall) / (Precision + Recall)
+    
+    :param precision: Calculated Precision value
+    :param recall: Calculated Recall value
+    :return: F1-Score value
+    """
+    if precision + recall == 0:
+        return 0.0  # Avoid division by zero
+    return 2 * (precision * recall) / (precision + recall)
+ 
+def evaluate_retrieval(relevant_docs, retrieved_docs):
+    """
+    Evaluates the retrieval performance by calculating TP, FP, and FN.
+    :param relevant_docs: A set of relevant document IDs (ground truth)
+    :param retrieved_docs: A set of document IDs retrieved by the IR system
+    :return: Computed Precision, Recall, and F1-score
+    """
+    tp = len(relevant_docs & retrieved_docs)  # True Positives (Correctly retrieved relevant docs)
+    fp = len(retrieved_docs - relevant_docs)  # False Positives (Retrieved but not relevant)
+    fn = len(relevant_docs - retrieved_docs)  # False Negatives (Relevant but not retrieved)
+    
+    # Calculate metrics
+    precision = calculate_precision(tp, fp)
+    recall = calculate_recall(tp, fn)
+    f1_score = calculate_f1_score(precision, recall)
+    
+    return tp, fp, fn, precision, recall, f1_score
+    
+# Example Data: Ground Truth & Retrieved Documents
+relevant_documents = {1, 2, 3, 5, 7}  # Actual relevant document IDs
+retrieved_documents = {1, 2, 4, 5, 6}  # Documents retrieved by the IR system
+ 
+# Compute evaluation metrics
+tp, fp, fn, precision, recall, f1_score = evaluate_retrieval(relevant_documents, retrieved_documents)
+ 
+# Display Results
+print("\n=== Evaluation Metrics for Information Retrieval ===")
+print(f"True Positives (TP): {tp}")
+print(f"False Positives (FP): {fp}")
+print(f"False Negatives (FN): {fn}")
+print(f"Precision: {precision:.4f}")
+print(f"Recall: {recall:.4f}")
+print(f"F1-Score: {f1_score:.4f}")
 
-#Load the dataset
-(X_train, _), (X_test, _) = keras.datasets.mnist.load_data()
-
-#Normalise the pixel values to be between 0 and 1
-X_train = X_train.astype('float32') / 255.0
-X_test = X_test.astype('float32') / 255.0
-
-#Define the encoder architecture
-encoder = keras.models.Sequential([
-    keras.layers.Flatten(input_shape=[28, 28]),
-    keras.layers.Dense(128, activation="relu"),
-    keras.layers.Dense(64, activation="relu"),
-    keras.layers.Dense(32, activation="relu"),
-])
-
-#Define the decoder architecture
-decoder = keras.models.Sequential([
-    keras.layers.Dense(64, activation="relu", input_shape=[32]),
-    keras.layers.Dense(128, activation="relu"),
-    keras.layers.Dense(28 * 28, activation="sigmoid"),
-    keras.layers.Reshape([28, 28])
-])
-
-#Combine the encoder and decoder into an autoencoder model
-autoencoder = keras.models.Sequential([encoder, decoder])
-
-#Compile the autoencoder model
-autoencoder.compile(loss="binary_crossentropy", optimizer=keras.optimizers.Adam(learning_rate = 0.001))
-
-#Train the autoencoder model
-history = autoencoder.fit(X_train, X_train, epochs=10, batch_size=128, validation_data=(X_test, X_test))
-
-#Use the trained autoencoder to predict the reconstructed images for the test data
-decoded_imgs = autoencoder.predict(X_test)
-
-#Plot some of the original test images and their reconstructed counterparts
-n = 10
-plt.figure(figsize=(20, 4))
-for i in range(n):
-    ax = plt.subplot(2, n, i + 1)
-    plt.imshow(X_test[i])
-    plt.gray()
-    ax.get_xaxis().set_visible(False)
-    ax.get_yaxis().set_visible(False)
-
-    ax = plt.subplot(2, n, i + 1 + n)
-    plt.imshow(decoded_imgs[i])
-    plt.gray()
-    ax.get_xaxis().set_visible(False)
-    ax.get_yaxis().set_visible(False)
-
-plt.show()
 
 
 
 
 ##########################################################################################
 
-PRAC5: Implement Convolutional Neural Network for Digit Recognition on the MNIST Dataset.
+PRAC5: Text Categorization Using Naive Bayes and SVM
 
-#Import statements
-import tensorflow as tf
-from tensorflow import keras
+# Import necessary libraries
 import numpy as np
-import matplotlib.pyplot as plt
+from sklearn.datasets import fetch_20newsgroups # Import 20 Newsgroups dataset
+from sklearn.feature_extraction.text import TfidfVectorizer  # Convert text to TF-IDF vectors
+from sklearn.model_selection import train_test_split  # Split data into training and test sets
+from sklearn.naive_bayes import MultinomialNB  # Naïve Bayes Classifier
+from sklearn.svm import SVC  # Support Vector Machine Classifier
+from sklearn.metrics import accuracy_score, classification_report  # Model evaluation metrics
+ 
+# Load the 20 Newsgroups dataset
+categories = ['alt.atheism', 'rec.motorcycles', 'comp.graphics', 'sci.med']
+newsgroups = fetch_20newsgroups(subset='all', categories=categories, remove=('headers', 'footers', 'quotes'))
+ 
+# Convert text data to numerical features using TF-IDF
+vectorizer = TfidfVectorizer(stop_words='english')  # Remove common English stop words
+X = vectorizer.fit_transform(newsgroups.data) # Transform text into TF-IDF features
+y = newsgroups.target  # Get category labels
+ 
+# Split dataset into training (80%) and testing (20%) sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+ 
+# Train and evaluate Naïve Bayes classifier
+nb_classifier = MultinomialNB()
+nb_classifier.fit(X_train, y_train)
+y_pred_nb = nb_classifier.predict(X_test)
+ 
+# Train and evaluate SVM classifier
+svm_classifier = SVC(kernel='linear')  # Linear kernel for text classification
+svm_classifier.fit(X_train, y_train)
+y_pred_svm = svm_classifier.predict(X_test)
+ 
+# Print evaluation results
+print("\n=== Naïve Bayes Classifier Performance ===")
+print(f"Accuracy: {accuracy_score(y_test, y_pred_nb):.4f}")
+print("Classification Report:\n", classification_report(y_test, y_pred_nb, target_names=categories))
+ 
+print("\n=== Support Vector Machine (SVM) Classifier Performance ===")
+print(f"Accuracy: {accuracy_score(y_test, y_pred_svm):.4f}")
+print("Classification Report:\n", classification_report(y_test, y_pred_svm, target_names=categories))
+ 
+# Import necessary libraries
+import numpy as np
+from sklearn.datasets import fetch_20newsgroups # Import 20 Newsgroups dataset
+from sklearn.feature_extraction.text import TfidfVectorizer  # Convert text to TF-IDF vectors
+from sklearn.model_selection import train_test_split  # Split data into training and test sets
+from sklearn.naive_bayes import MultinomialNB  # Naïve Bayes Classifier
+from sklearn.svm import SVC  # Support Vector Machine Classifier
+from sklearn.metrics import accuracy_score, classification_report  # Model evaluation metrics
+ 
+# Load the 20 Newsgroups dataset
+categories = ['alt.atheism', 'rec.motorcycles', 'comp.graphics', 'sci.med']
+newsgroups = fetch_20newsgroups(subset='all', categories=categories, remove=('headers', 'footers', 'quotes'))
+ 
+# Convert text data to numerical features using TF-IDF
+vectorizer = TfidfVectorizer(stop_words='english')  # Remove common English stop words
+X = vectorizer.fit_transform(newsgroups.data) # Transform text into TF-IDF features
+y = newsgroups.target  # Get category labels
+ 
+# Split dataset into training (80%) and testing (20%) sets
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+ 
+# Train and evaluate Naïve Bayes classifier
+nb_classifier = MultinomialNB()
+nb_classifier.fit(X_train, y_train)
+y_pred_nb = nb_classifier.predict(X_test)
+ 
+# Train and evaluate SVM classifier
+svm_classifier = SVC(kernel='linear')  # Linear kernel for text classification
+svm_classifier.fit(X_train, y_train)
+y_pred_svm = svm_classifier.predict(X_test)
+ 
+# Print evaluation results
+print("\n=== Naïve Bayes Classifier Performance ===")
+print(f"Accuracy: {accuracy_score(y_test, y_pred_nb):.4f}")
+print("Classification Report:\n", classification_report(y_test, y_pred_nb, target_names=categories))
+ 
+print("\n=== Support Vector Machine (SVM) Classifier Performance ===")
+print(f"Accuracy: {accuracy_score(y_test, y_pred_svm):.4f}")
+print("Classification Report:\n", classification_report(y_test, y_pred_svm, target_names=categories))
 
-#Load the dataset
-(X_train, y_train), (X_test, y_test) = keras.datasets.mnist.load_data()
-
-#Normalise the pixel values to be between 0 and 1
-X_train = X_train.astype('float32') / 255.0
-X_test = X_test.astype('float32') / 255.0
-X_train = np.expand_dims(X_train, axis=-1)
-X_test = np.expand_dims(X_test, axis=-1)
-
-#Define the CNN architecture
-model = keras.models.Sequential([
-    keras.layers.Conv2D(32, (3, 3), activation='relu', input_shape=(28, 28, 1)),
-    keras.layers.MaxPooling2D((2, 2)),
-    keras.layers.Conv2D(64, (3, 3), activation='relu'),
-    keras.layers.MaxPooling2D((2, 2)),
-    keras.layers.Flatten(),
-    keras.layers.Dense(64, activation='relu'),
-    keras.layers.Dense(10, activation='softmax')
-])
-
-#Compile the model
-model.compile(optimizer='adam',
-              loss='sparse_categorical_crossentropy',
-              metrics=['accuracy'])
-
-#Train the model
-history = model.fit(X_train, y_train, epochs=15, batch_size=128, validation_data=(X_test, y_test))
-
-#Evaluate the model on the test data
-test_loss, test_acc = model.evaluate(X_test, y_test)
-print('Test accuracy:', test_acc)
-
-#Show prediction for a sample input image
-sample_image = X_test[0]
-sample_label = y_test[0]
-sample_image = np.expand_dims(sample_image, 0)
-pred = model.predict(sample_image)
-pred_label = np.argmax(pred)
-print('Predicted label:', pred_label)
-print('True label:', sample_label)
-
-#Display the sample image
-plt.imshow(sample_image.squeeze(), cmap='gray')
-plt.show()
 
 
 
 ####################################################################
 
-PRAC6:Transfer Learning on Suitable Dataset
+PRAC6: Clustering for Information Retrieval Using K-Means & Hierarchical Clustering.
 
-
-# Implement Transfer learning on the suitable public dataset (e.g. classify the cats versus dogs dataset from Kaggle or UCI or inbuilt dataset)
-
-import tensorflow as tf
+# Import necessary libraries
 import numpy as np
 import matplotlib.pyplot as plt
-import os
-import tensorflow.keras.models
-import zipfile
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras.applications import VGG16
+import seaborn as sns
+from sklearn.datasets import fetch_20newsgroups  # Load 20 Newsgroups dataset
+from sklearn.feature_extraction.text import TfidfVectorizer  # Convert text to TF-IDF features
+from sklearn.cluster import KMeans, AgglomerativeClustering  # K-Means & Hierarchical clustering
+from sklearn.metrics import silhouette_score  # Evaluate clustering performance
+from scipy.cluster.hierarchy import dendrogram, linkage  # Hierarchical clustering visualization
+ 
+# Load a subset of 20 Newsgroups dataset (4 categories for simplicity)
+categories = ['alt.atheism', 'soc.religion.christian', 'comp.graphics', 'sci.med']
+newsgroups = fetch_20newsgroups(subset='all', categories=categories, remove=('headers', 'footers', 'quotes'))
+ 
+# Convert text data into numerical format using TF-IDF vectorization
+vectorizer = TfidfVectorizer(stop_words='english', max_features=1000)  # Limit features for efficiency
+X = vectorizer.fit_transform(newsgroups.data)  # Transform text into TF-IDF vectors
+ 
+# K-MEANS CLUSTERING
+# Define number of clusters (same as number of categories)
+num_clusters = len(categories)
+ 
+# Perform K-Means clustering
+kmeans = KMeans(n_clusters=num_clusters, random_state=42, n_init=10)
+kmeans_labels = kmeans.fit_predict(X)  # Assign clusters
+ 
+# Compute silhouette score to evaluate clustering performance
+silhouette_avg = silhouette_score(X, kmeans_labels)
+ 
+# Display K-Means results
+print("\n=== K-Means Clustering Results ===")
+print(f"Number of Clusters: {num_clusters}")
+print(f"Silhouette Score: {silhouette_avg:.4f}")
+ 
+# ---------------- HIERARCHICAL CLUSTERING ----------------
+# Perform Agglomerative Hierarchical clustering
+hierarchical = AgglomerativeClustering(n_clusters=num_clusters, linkage='ward') # Remove affinity parameter
+hierarchical_labels = hierarchical.fit_predict(X.toarray())  # Convert sparse matrix to array
+ 
+# Plot dendrogram for hierarchical clustering
+plt.figure(figsize=(10, 5))
+plt.title("Hierarchical Clustering Dendrogram")
+Z = linkage(X.toarray(), method='ward')  # Compute hierarchical clustering linkage matrix
+dendrogram(Z, truncate_mode="level", p=10)  # Visualize only first few levels
+plt.show()
+ 
+# Display Hierarchical clustering results
+print("\n=== Hierarchical Clustering Results ===")
+print(f"Number of Clusters: {num_clusters}")
 
-# Download and extract dataset
-url = "https://storage.googleapis.com/mledu-datasets/cats_and_dogs_filtered.zip"
-filename = "cats_and_dogs_filtered.zip"  # Just the filename
-cached_file_path = tf.keras.utils.get_file(filename, url, cache_dir=os.getcwd())  # Specify cache_dir and get the path
-#Use the cached file path instead of just the filename
-with zipfile.ZipFile(cached_file_path, "r") as zip_ref: 
-    zip_ref.extractall()
-
-#Define data generators
-train_dir = os.path.join(os.getcwd(), "cats_and_dogs_filtered","train")
-validation_dir = os.path.join(os.getcwd(), "cats_and_dogs_filtered","validation")
-
-train_datagen = ImageDataGenerator(rescale = 1./255,
-                                   rotation_range = 20,
-                                   width_shift_range = 0.2,
-                                   height_shift_range = 0.2,
-                                   shear_range = 0.2,
-                                   zoom_range = 0.2,
-                                   horizontal_flip = True)
-
-validation_datagen = ImageDataGenerator(rescale = 1./255)
-
-train_generator = train_datagen.flow_from_directory(train_dir,
-                                                   target_size = (150,150),
-                                                   batch_size = 20,
-                                                   class_mode = "binary")
-
-validation_generator = validation_datagen.flow_from_directory(validation_dir,
-                                                              target_size = (150,150),
-                                                              batch_size = 20,
-                                                              class_mode = "binary"
-                                                              )
-
-# Load pre - trained VGG16 model
-conv_base = VGG16(weights = "imagenet",
-                  include_top = False,
-                  input_shape = (150,150,3))
-
-#Freeze convolutional base layers
-conv_base.trainable = False
-
-#Build model on top of the convolutional base
-model = tf.keras.models.Sequential()
-model.add(conv_base)
-model.add(tf.keras.layers.Flatten())
-model.add(tf.keras.layers.Dense(256,activation = "relu"))
-model.add(tf.keras.layers.Dropout(0.5))
-model.add(tf.keras.layers.Dense(1,activation = "sigmoid"))
-
-#Compile model
-model.compile(loss = "binary_crossentropy",
-              optimizer = tf.keras.optimizers.RMSprop(learning_rate = 2e-5),
-              metrics = ["accuracy"])
-
-#Train model
-history = model.fit(train_generator,
-                    steps_per_epoch = 5,
-                    epochs = 5,
-                    validation_data = validation_generator,
-                    validation_steps = 50)
-
-#Show sample input and its predicted class
-x, y_true = next(validation_generator)
-y_pred = model.predict(x)
-class_names = ['cat','dog']
-
-for i in range(len(x)):
-    plt.imshow(x[i])
-    plt.title(f'Predicted class: {class_names[int(round(y_pred[i][0]))]}, True class: {class_names[int(y_true[i])]}')
-    plt.show()
-
-#Plot accuracy and loss over time
-acc = history.history['accuracy']
-val_acc = history.history['val_accuracy']
-loss = history.history['loss']
-val_loss = history.history['val_loss']
-
-epochs = range(1, len(acc) + 1)
-
-plt.plot(epochs, acc, "bo", label = "Training acc")
-plt.plot(epochs, val_acc, "b", label = "Validation acc")
-plt.title("Training and validation accuracy")
-plt.legend()
 
 
 
 ####################################################################################
 
-PRAC7: Stock Price Prediction using LSTM and GRU Models.
-
-#Import Statements
-import yfinance as yf
-import numpy as np
-import pandas as pd
-import matplotlib.pyplot as plt
-from sklearn.preprocessing import MinMaxScaler
-from tensorflow.keras.models import Sequential
-from tensorflow.keras.layers import LSTM, GRU, Dense
-
-#Load stock data from Yahoo Finance
-stock_symbol = 'AAPL'
-df = yf.download(stock_symbol, start="2010-01-01", end="2023-01-01")
-
-#Use the 'Close' price for modeling
-data = df[['Close']].values
-
-#Normalise the data
-scaler = MinMaxScaler(feature_range=(0,1))
-data_scaled = scaler.fit_transform(data)
-
-#Split the data into train and test sets
-train_size = int(len(data_scaled) * 0.8)
-train, test = data_scaled[0:train_size], data_scaled[train_size:]
-
-#Convert the data into time-series format
-def create_dataset(dataset, look_back=1):
-    X, Y = [], []
-    for i in range(len(dataset) - look_back):
-        X.append(data[i:(i+look_back), 0])
-        Y.append(data[i+look_back, 0])
-    return np.array(X), np.array(Y)
-
-look_back = 60
-X_train, y_train = create_dataset(train, look_back)
-X_test, y_test = create_dataset(test, look_back)
-
-#Reshape input to be [samples, time steps, features]
-X_train = np.reshape(X_train, (X_train.shape[0], X_train.shape[1], 1))
-X_test = np.reshape(X_test, (X_test.shape[0], X_test.shape[1], 1))
-
-#Build LSTM Model
-model_lstm = Sequential()
-model_lstm.add(LSTM(50, input_shape=(look_back, 1)))
-model_lstm.add(Dense(1))
-model_lstm.compile(loss='mean_squared_error', optimizer='adam')
-
-#Build GRU Model
-model_gru = Sequential()
-model_gru.add(GRU(50, input_shape=(look_back, 1)))
-model_gru.add(Dense(1))
-model_gru.compile(loss='mean_squared_error', optimizer='adam')
-
-#Train the model
-model_lstm.fit(X_train, y_train, epochs=20, batch_size=32, verbose=1)
-model_gru.fit(X_train, y_train, epochs=20, batch_size=32, verbose=1)
-
-#Make Predictions
-lstm_predictions = model_lstm.predict(X_test)
-gru_predictions = model_gru.predict(X_test)
-
-#Inverse transform predictions and actual values
-lstm_predictions = scaler.inverse_transform(lstm_predictions)
-gru_predictions = scaler.inverse_transform(gru_predictions)
-y_test_actual = scaler.inverse_transform([y_test])
-
-#Future predictions (next 30 days)
-future_steps = 30
-last_sequence = X_test[-1] #Last sequence in test data
-
-#Predict future predictions using the LSTM Model
-future_predictions_lstm = []
-for i in range(future_steps):
-    prediction = model_lstm.predict(np.reshape(last_sequence, (1, look_back, 1)))
-    future_predictions_lstm.append(prediction[0][0])
-    last_sequence = np.append(last_sequence[1:], prediction[0][0])
-
-#Predict future prices using the GRU Model
-last_sequence = X_test[-1]
-future_predictions_gru = []
-for i in range(future_steps):
-    prediction = model_gru.predict(np.reshape(last_sequence, (1, look_back, 1)))
-    future_predictions_gru.append(prediction[0][0])
-    last_sequence = np.append(last_sequence[1:], prediction[0][0])
-
-#Inverse transform future predictions
-future_predictions_lstm = scaler.inverse_transform(np.array(future_predictions_lstm).reshape(-1, 1))
-future_predictions_gru = scaler.inverse_transform(np.array(future_predictions_gru).reshape(-1, 1))
-
-#Create a new time range for future predictions
-future_range = np.arange(len(y_test_actual[0]), len(y_test_actual[0]) + future_steps)
-
-#Plot the results
-plt.figure(figsize=(14,7))
-plt.plot(y_test_actual[0], label='Actual Price', color='blue')
-plt.plot(lstm_predictions, label='LSTM Predictions', color='orange')
-plt.plot(gru_predictions, label='GRU Predictions', color='green')
-
-#Plot the future predictions
-plt.plot(future_range, future_predictions_lstm, label='Future LSTM Predictions', color='red', linestyle='--')
-plt.plot(future_range, future_predictions_gru, label='Future GRU Predictions', color='purple', linestyle='--')
-
-plt.title(f'{stock_symbol} Stock price prediction and future forecasting - LSTM vs GRU')
-plt.xlabel('Time Steps')
-plt.ylabel('Stock Price')
-plt.legend()
-plt.show()
-
-
-
-#################################################################################
-
-
-PRAC8: Implementaton of GAN for generating synthetic shapes.
-
-import tensorflow as tf
-import numpy as np
-import matplotlib.pyplot as plt
-
-#Check if TF is able to detect the gpu
-print(tf.config.list_physical_devices('GPU'))
-
-#Set the GPU device to use
-device_name = '/device:GPU:0'
-
-mnist = tf.keras.datasets.mnist
-(train_images, train_labels), (_, _) = mnist.load_data()
-
-#Normalize the images to [-1, -1]
-train_images = (train_images.astype('float32') - 127.5) / 127.5
-
-#Reshape the images to (28, 28, 1) and a channel dimension
-train_images = np.expand_dims(train_images, axis=-1)
-
-#Batch and shuffle the data
-BUFFER_SIZE = 60000
-BATCH_SIZE = 256
-train_dataset = tf.data.Dataset.from_tensor_slices(train_images).shuffle(BUFFER_SIZE).batch(BATCH_SIZE)
-
-def make_gen_model():
-    model = tf.keras.Sequential()
-    model.add(tf.keras.layers.Dense(7*7*256, use_bias=False, input_shape=(100,)))
-    model.add(tf.keras.layers.BatchNormalization())
-    model.add(tf.keras.layers.LeakyReLU())
-
-    model.add(tf.keras.layers.Reshape((7, 7, 256)))
-    assert model.output_shape == (None, 7, 7, 256)
-
-    model.add(tf.keras.layers.Conv2DTranspose(128, (5, 5), strides=(1, 1), padding='same', use_bias=False))
-    assert model.output_shape == (None, 7, 7, 128)
-    model.add(tf.keras.layers.BatchNormalization())
-    model.add(tf.keras.layers.LeakyReLU())
-
-    model.add(tf.keras.layers.Conv2DTranspose(64, (5, 5), strides=(2, 2), padding='same', use_bias=False))
-    assert model.output_shape == (None, 14, 14, 64)
-    model.add(tf.keras.layers.BatchNormalization())
-    model.add(tf.keras.layers.LeakyReLU())
-
-    model.add(tf.keras.layers.Conv2DTranspose(1, (5, 5), strides=(2, 2), padding='same', use_bias=False, activation='tanh'))
-    assert model.output_shape == (None, 28, 28, 1)
-
-    return model
-
-def make_disc_model():
-    model = tf.keras.Sequential()
-    model.add(tf.keras.layers.Conv2D(64, (5, 5), strides=(2, 2), padding='same', input_shape=[28, 28, 1]))
-    model.add(tf.keras.layers.LeakyReLU())
-    model.add(tf.keras.layers.Dropout(0.3))
-
-    model.add(tf.keras.layers.Conv2D(128, (5, 5), strides=(2, 2), padding='same'))
-    model.add(tf.keras.layers.LeakyReLU())
-    model.add(tf.keras.layers.Dropout(0.3))
-
-    model.add(tf.keras.layers.Flatten())
-    model.add(tf.keras.layers.Dense(1))
-
-    return model
-
-cross_entropy = tf.keras.losses.BinaryCrossentropy(from_logits=True)
-
-def discriminator_loss(real_output, fake_output):
-    real_loss = cross_entropy(tf.ones_like(real_output), real_output)
-    fake_loss = cross_entropy(tf.zeros_like(fake_output), fake_output)
-    total_loss = real_loss + fake_loss
-    return total_loss
-
-def generator_loss(fake_output):
-    return cross_entropy(tf.ones_like(fake_output), fake_output)
-
-#Define the models
-generator = make_gen_model()
-discriminator = make_disc_model()
-
-#Define the optimizers
-generator_optimizer = tf.keras.optimizers.Adam(1e-4)
-discriminator_optimizer = tf.keras.optimizers.Adam(1e-4)
-
-#Define the training loop
-EPOCHS = 100
-noise_dim = 100
-num_examples_to_generate = 16
-
-@tf.function
-def train_step(images):
-    #Generate noise
-    noise = tf.random.normal([BATCH_SIZE, noise_dim])
-
-    with tf.GradientTape() as gen_tape, tf.GradientTape() as disc_tape:
-        #Generate fake images
-        generated_images = generator(noise, training=True)
-
-        #Evaluate discriminator on real/fake images
-        real_output = discriminator(images, training=True)
-        fake_output = discriminator(generated_images, training=True)
-
-        #Calculate the losses
-        gen_loss = generator_loss(fake_output)
-        disc_loss = discriminator_loss(real_output, fake_output)
-
-    #Calculate the gradients and apply them
-    gradients_of_generator = gen_tape.gradient(gen_loss, generator.trainable_variables)
-    gradients_of_discriminator = disc_tape.gradient(disc_loss, discriminator.trainable_variables)
-
-    generator_optimizer.apply_gradients(zip(gradients_of_generator, generator.trainable_variables))
-    discriminator_optimizer.apply_gradients(zip(gradients_of_discriminator, discriminator.trainable_variables))
-
-def generate_and_save_images(model, epoch, test_input):
-    #Generate images from the model
-    predictions = model(test_input, training=False)
-
-    #Rescale to [0, 1]
-    predictions = (predictions + 1) / 2.0
-
-    #Plot the images
-    fig = plt.figure(figsize=(4, 4))
-    for i in range(predictions.shape[0]):
-        plt.subplot(4, 4, i+1)
-        plt.imshow(predictions[i, :, :, 0], cmap='gray')
-        plt.axis('off')
-
-    #Save the figure
-    plt.savefig('image_at_epoch_{:04d}.png'.format(epoch))
-    plt.show()
-
-#Generate a fixed set of noise for evaluating the model during training
-fixed_noise = tf.random.normal([num_examples_to_generate, noise_dim])
-
-#Train the model
-for epoch in range(EPOCHS):
-    for image_batch in train_dataset:
-      train_step(image_batch)
-
-    #Generate and save images every 10 epochs
-    if (epoch + 1) % 10 == 0:
-        generate_and_save_images(generator, epoch + 1, fixed_noise)
-
-    #Print progress every epoch
-    print('Epoch {} completed'.format(epoch + 1))
-
-
-############################################################################################
-
-PRAC9: Implementing a simple form of a RNN for Stock Price Prediction.
+PRAC7: Implementation of Page Ranking Algorithm.
 
 import numpy as np
-import matplotlib.pyplot as plt
-import torch
-import torch.nn as nn
-from sklearn.preprocessing import MinMaxScaler
-
-# Detect GPU
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(f"Using device: {device}")
-
-# 1. Simulate Stock Prices
-np.random.seed(42)
-time_steps = np.linspace(0, 100, 400)
-prices = np.sin(time_steps) + np.random.normal(scale=0.5, size=len(time_steps))
-
-# 2. Visualize Data
-plt.figure(figsize=(10, 6))
-plt.plot(time_steps, prices, label='Stock Price')
-plt.title('Simulated Stock Prices')
-plt.xlabel('Time')
-plt.ylabel('Price')
-plt.legend()
-plt.show()
-
-# 3. Normalize Data
-scaler = MinMaxScaler(feature_range=(-1, 1))
-prices_normalized = scaler.fit_transform(prices.reshape(-1, 1))
-
-# 4. Prepare Data (Sliding Window)
-def sliding_windows(data, seq_length):
-    x, y = [], []
-    for i in range(len(data) - seq_length):
-        x.append(data[i:i+seq_length])
-        y.append(data[i+seq_length])
-    return np.array(x), np.array(y)
-
-seq_length = 10  # Increased sequence length for better learning
-x, y = sliding_windows(prices_normalized, seq_length)
-
-# Convert to PyTorch tensors and move to GPU
-train_size = int(len(y) * 0.67)
-test_size = len(y) - train_size
-
-batch_size = 64  # Increase batch size for better GPU utilization
-# Create training and test sets
-trainX = torch.Tensor(x[:train_size]).view(-1, seq_length, 1).to(device)
-trainY = torch.Tensor(y[:train_size]).to(device)
-
-testX = torch.Tensor(x[train_size:]).view(-1, seq_length, 1).to(device)
-testY = torch.Tensor(y[train_size:]).to(device)
-
-fullX = torch.Tensor(x).view(-1, seq_length, 1).to(device)  # For full dataset prediction
-
-# 5. Define Optimized LSTM Model
-class OptimizedLSTM(nn.Module):
-    def __init__(self, input_size, hidden_size, num_layers, output_size):
-        super(OptimizedLSTM, self).__init__()
-        self.hidden_size = hidden_size
-        self.num_layers = num_layers
-
-        # Enable cuDNN optimizations
-        self.lstm = nn.LSTM(input_size, hidden_size, num_layers,
-                            batch_first=True, bidirectional=False).to(device)
-
-        self.fc = nn.Linear(hidden_size, output_size)
-
-    def forward(self, x):
-            h0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device).detach()
-            c0 = torch.zeros(self.num_layers, x.size(0), self.hidden_size).to(device).detach()
-
-            # Enable cuDNN optimization
-            with torch.backends.cudnn.flags(enabled=True):
-                out, _ = self.lstm(x, (h0, c0))
-
-            out = self.fc(out[:, -1, :])  # Use last time step output
-            return out
-
-# 6. Set Hyperparameters
-input_size = 1
-hidden_size = 128  # Increased hidden size
-num_layers = 3  # More layers for better learning
-output_size = 1
-num_epochs = 500  # Lower epochs due to larger batch size
-learning_rate = 0.001
-
-# 7. Initialize Model, Loss, and Optimizer
-model = OptimizedLSTM(input_size, hidden_size, num_layers, output_size).to(device)
-criterion = nn.MSELoss()
-optimizer = torch.optim.Adam(model.parameters(), lr=learning_rate)
-
-# Use mixed precision training (automatic mixed precision AMP)
-scaler_amp = torch.cuda.amp.GradScaler()
-
-# 8. Train Model with Mixed Precision
-for epoch in range(num_epochs):
-    model.train()
-    optimizer.zero_grad()
-
-    # Use automatic mixed precision for faster computation
-    with torch.cuda.amp.autocast():
-        outputs = model(trainX)
-        loss = criterion(outputs, trainY)
-
-    # Scale loss and backward pass
-    scaler_amp.scale(loss).backward()
-
-    # Clip gradients to avoid explosion
-    torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1.0)
-
-    # Update weights
-    scaler_amp.step(optimizer)
-    scaler_amp.update()
-
-    if epoch % 50 == 0:
-        print(f"Epoch [{epoch}/{num_epochs}], Loss: {loss.item():.6f}")
-
-# 9. Evaluate Model
-model.eval()
-with torch.no_grad():
-    train_predict = model(trainX)
-    test_predict = model(testX)
-    full_predict = model(fullX)  # Predict for the entire dataset
-
-# 10. Move Predictions Back to CPU
-train_predict = scaler.inverse_transform(train_predict.cpu().numpy())
-test_predict = scaler.inverse_transform(test_predict.cpu().numpy())
-full_predict = scaler.inverse_transform(full_predict.cpu().numpy())
-actual_prices = scaler.inverse_transform(y)
-
-# 11. Plot Results
-plt.figure(figsize=(10, 6))
-plt.axvline(x=train_size, c='r', linestyle='--', label='Train/Test Split')
-
-# Plot actual prices
-plt.plot(actual_prices, label='Actual Price', color='blue')
+ 
+def initialize_pagerank(graph):
+    """
+    Initializes the PageRank values for all nodes in the graph.
+    graph: Dictionary representing the adjacency list of the web graph.
+    return: Dictionary of initial PageRank values.
+    """
+    num_nodes = len(graph)
+    return {node: 1 / num_nodes for node in graph}  # All nodes start with equal probability
+ 
+def compute_pagerank(graph, damping_factor=0.85, max_iterations=100, tolerance=1e-6):
+    """
+    Computes the PageRank scores iteratively until convergence or the max iteration is reached.
+    :graph: Dictionary representing the adjacency list of the web graph.
+    :damping_factor: Probability of following a link (default 0.85).
+    :max_iterations: Maximum number of iterations.
+    :tolerance: Convergence threshold.
+    :return: Dictionary of final PageRank values.
+    """
+    num_nodes = len(graph)
+    pagerank = initialize_pagerank(graph)  # Initialize PR values
+    new_pagerank = pagerank.copy()
+ 
+    for _ in range(max_iterations):
+        for node in graph:
+            # Calculate new PR value using the PageRank formula
+            new_pagerank[node] = (1 - damping_factor) / num_nodes + damping_factor * sum(
+                pagerank[incoming] / len(graph[incoming]) for incoming in graph if node in graph[incoming]
+            )
+ 
+        # Check convergence (if the change in values is below tolerance, stop iterating)
+        if all(abs(new_pagerank[node] - pagerank[node]) < tolerance for node in pagerank):
+            break
+        pagerank = new_pagerank.copy()  # Update PR values
+ 
+    return pagerank
+ 
+#Representation of a small web graph as an adjacency list
+web_graph = {
+    'A': {'B', 'C'},
+    'B': {'C'},
+    'C': {'A'},
+    'D': {'C'}
+}
+ 
+# Compute PageRank
+pagerank_scores = compute_pagerank(web_graph)
+ 
+# Display Results
+print("\n=== PageRank Scores ===")
+for page, score in sorted(pagerank_scores.items(), key=lambda x: x[1], reverse=True):
+    print(f"Page {page}: {score:.6f}")
 
 
 
